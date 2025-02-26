@@ -3,9 +3,6 @@
 #include "Eigen/Dense"
 #include "cell_types/Cell.h"
 #include "cell_types/Point.h"
-#include "cell_types/Q_Cell.h"
-#include "cell_types/Conway_Cell.h"
-#include "cell_types/SWE_Cell.h"
 #include "cell_types/Euler_Cell.h"
 #include "cell_types/DG_Q_Cell.h"
 #include "vmp/VoronoiMesh.h"
@@ -35,11 +32,7 @@ public:
     double dt_CFL_euler(double CFL = 0.4);
 
     // initial conditions
-    void initialize_Q_cells(int a, int b, double value = 1, int step = 1);
-    void initialize_Q_circle(Point p0 = Point(0.5, 0.5), double r = 0.1, double Qval = 1);
     void initialize_boundary_struct(Point p0, double l_x, double l_y);
-    void initialize_SWE_gaussian(Point p0 = Point(0.5, 0.5), double A = 1, double sigma = 0.5);
-    void initialize_SWE_dam_break(double h1 = 2.0, double h2 = 1.0, double pos = 0.5, int dam_break_type = 0);
     void initialize_euler_shock_tube();
     void initialize_kelvin_helmholtz();
     void initialize_rayleigh_taylor(Point g);
@@ -58,10 +51,6 @@ public:
 
     // save mesh
     void save_mesh(int file_nr, string name, double t_sim);
-    void save_Q_diff(double t, bool reset_file = false, bool is_density = true);
-    void save_L1_adv_circle(double t, bool reset_file, Point v = Point(0.5, 0.3), Point p0 = Point(0.5, 0.5), double r = 0.1);
-    void save_L1_adv_1Dstepfunc(double t, bool reset_file, double v = 0.5, double a0 = 0, double b0 = 0.1);
-    void save_L1_swe_dam_break(double t, bool reset_file);
 
 
 private:

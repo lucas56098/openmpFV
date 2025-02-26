@@ -29,9 +29,6 @@ add_executable(hydro
     # different cell types
     cell_types/Point.cpp 
     cell_types/Cell.cpp 
-    cell_types/Q_Cell.cpp
-    cell_types/Conway_Cell.cpp
-    cell_types/SWE_Cell.cpp
     cell_types/Euler_Cell.cpp
     cell_types/DG_Q_Cell.cpp
 

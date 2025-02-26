@@ -7,9 +7,6 @@
 #include "Eigen/Dense"
 #include "cell_types/Cell.h"
 #include "cell_types/Point.h"
-#include "cell_types/Q_Cell.h"
-#include "cell_types/Conway_Cell.h"
-#include "cell_types/SWE_Cell.h"
 #include "cell_types/Euler_Cell.h"
 #include "vmp/VoronoiMesh.h"
 #include "utilities/Functions.h"
@@ -635,111 +632,6 @@ void Mesh<CellType>::generate_vmesh1D(vector<Point> pts, bool repeating) {
 
 
 // SET INITIAL CONDITIONS -------------------------------------------------------------------------
-// sets the inital value for the first N cells of the cell vector to value
-template <typename CellType>
-void Mesh<CellType>::initialize_Q_cells(int a, int b, double value, int step) {
-
-    if(cells.size()< b) {
-        cerr << "ERROR: initalize_cells(a, b, value), tried to initalize more cells then there are! b = " << b  << " > cells.size() =" << cells.size() << endl;
-        exit(EXIT_FAILURE);
-    }
-
-    // set Q for all indices between a and b to value
-    for (int i = a; i < b; i+=step) {
-        cells[i].Q = value;
-    }
-
-}
-
-
-// sets the initial condition according to given analytical Q_circle
-template <typename CellType>
-void Mesh<CellType>::initialize_Q_circle(Point p0, double r, double Qval) {
-
-    // make sure that the cell type is correct
-    if constexpr (is_same_v<CellType, Q_Cell> == false) {
-        cerr << "initalize_Q_circle called with wrong cell type, you must use Q_Cells" << endl;
-        exit(EXIT_FAILURE);
-    }
-
-    // set Q_values for initial circle using analytical solution at t = 0
-    for (int i = 0; i < cells.size(); i++) {
-        cells[i].Q = Qval * advecting_circle(cells[i].seed, 0, Point(0, 0), p0, r);
-    }
-
-}
-
-
-// Function to initalize a gaussian for shallow water equations
-template <typename CellType>
-void Mesh<CellType>::initialize_SWE_gaussian(Point p0, double A, double sigma) {
-
-    // make sure that the cell type is correct
-    if constexpr (is_same_v<CellType, SWE_Cell> == false) {
-        cerr << "initialize_SWE_gaussian called with wrong cell type, you must use SWE_Cells" << endl;
-        exit(EXIT_FAILURE);
-    }
-
-    for (int i = 0; i < cells.size(); i++) {
-
-        // set height according to gaussian shape
-        double dx = cells[i].seed.x - p0.x;
-        double dy = cells[i].seed.y - p0.y;
-        cells[i].h += A * exp(- (dx * dx + dy * dy) / (2 * sigma * sigma));
-
-        // no inital velocities
-        cells[i].u = 0;
-        cells[i].v = 0;
-
-    }
-
-}
-
-
-// sets initial conditions for SWE dam break (x, diagonal, circular)
-template <typename CellType>
-void Mesh<CellType>::initialize_SWE_dam_break(double h1, double h2, double pos, int dam_break_type) {
-
-    // make sure that the cell type is correct
-    if constexpr (is_same_v<CellType, SWE_Cell> == false) {
-        cerr << "initialize_SWE_dam_break called with wrong cell type, you must use SWE_Cells" << endl;
-        exit(EXIT_FAILURE);
-    }
-
-    // go through all cells
-    for (int i = 0; i< cells.size(); i++) {
-
-        bool set_values = false;
-
-        // dam break in x direction
-        if (dam_break_type == 0) {
-            set_values = (cells[i].seed.x <= pos);
-        // dam break in y direction
-        } else if (dam_break_type == 1) {
-            set_values = (cells[i].seed.y <= pos);
-        // dam break in diagonal direction
-        } else if (dam_break_type == 2) {
-            set_values = (cells[i].seed.y + cells[i].seed.x  <= 2*pos);
-        // circular dam break
-        } else if (dam_break_type == 3) {
-            set_values = (sqrt(cells[i].seed.y*cells[i].seed.y + cells[i].seed.x*cells[i].seed.x)  <= pos);
-        }
-
-        // set values according to bool
-        if (set_values) {
-            cells[i].h += h1-1;
-            cells[i].u = 0;
-            cells[i].v = 0;
-        } else {
-            cells[i].h += h2-1;
-            cells[i].u = 0;
-            cells[i].v = 0;
-        }
-    }
-    
-}
-
-
 // function to initalize sods shock tube on the mesh
 template <typename CellType>
 void Mesh<CellType>::initialize_euler_shock_tube() {
@@ -907,20 +799,6 @@ template <typename CellType>
 void Mesh<CellType>::make_cell_boundary_cell(int i) {
 
     // make sure that the cell type is correct
-    if constexpr (is_same_v<CellType, Q_Cell> == true) {
-        // boundary cells have Q = -INFINITY such that they will not be plotted in visualization
-        cells[i].Q = -INFINITY;
-    }
-
-    // make sure that the cell type is correct
-    if constexpr (is_same_v<CellType, SWE_Cell> == true) {
-        // boundary cells have h = -INFINITY such that they will not be plotted in visualization
-        cells[i].h = -10;
-        cells[i].u = 0;
-        cells[i].v = 0;
-    }
-
-    // make sure that the cell type is correct
     if constexpr (is_same_v<CellType, Euler_Cell> == true) {
         // boundary cells have h = -INFINITY such that they will not be plotted in visualization
         cells[i].rho = -INFINITY;
@@ -1027,87 +905,6 @@ int Mesh<CellType>::add_struct(vector<Point>* pts, double dist_a, double safety_
     }
     *pts = pts_removed;
 
-/*
-    if (structname == "struct_africa") {
-        inner_points.push_back(Point(0.3, 0.010001));
-        inner_points.push_back(Point(0.26, 0.01));
-        inner_points.push_back(Point(0.33, 0.0100002));
-        inner_points.push_back(Point(0.36, 0.01000001));
-        inner_points.push_back(Point(0.39, 0.01000000233));
-        inner_points.push_back(Point(0.42, 0.0100000023));
-        inner_points.push_back(Point(0.47, 0.0100000024));
-        inner_points.push_back(Point(0.49, 0.0100000005));
-        inner_points.push_back(Point(0.52, 0.0100000001));
-        inner_points.push_back(Point(0.54, 0.01000000065));
-        inner_points.push_back(Point(0.57, 0.01000000013));
-        inner_points.push_back(Point(0.62, 0.0100000002123));
-        inner_points.push_back(Point(0.64, 0.0100000002324));
-        inner_points.push_back(Point(0.67, 0.010000000253));
-        inner_points.push_back(Point(0.69, 0.01000000023534));
-        inner_points.push_back(Point(0.71, 0.010000000283534));
-        inner_points.push_back(Point(0.74, 0.0100000002264567));
-        inner_points.push_back(Point(0.76, 0.0100000002897));
-        inner_points.push_back(Point(0.78, 0.010000000276));
-        inner_points.push_back(Point(0.81, 0.010000000245));
-        inner_points.push_back(Point(0.83, 0.010000000285));
-        inner_points.push_back(Point(0.86, 0.010000000222));
-        inner_points.push_back(Point(0.89, 0.010000000256));
-        inner_points.push_back(Point(0.92, 0.010000000266));
-        inner_points.push_back(Point(0.94, 0.010000000286));
-        inner_points.push_back(Point(0.96, 0.0100000002002));
-        inner_points.push_back(Point(0.44, 0.01000000020023));
-        inner_points.push_back(Point(0.59, 0.010000000200211));
-        inner_points.push_back(Point(0.95003235, 0.1));
-        inner_points.push_back(Point(0.95003003, 0.15));
-        inner_points.push_back(Point(0.95003435, 0.2));
-        inner_points.push_back(Point(0.9500343, 0.25));
-        inner_points.push_back(Point(0.950032443, 0.3));
-        inner_points.push_back(Point(0.950031322, 0.35));
-
-    }
-    if (structname == "struct_europe") {
-        inner_points.push_back(Point(0.435, 0.578));
-        inner_points.push_back(Point(0.4085, 0.605));
-        inner_points.push_back(Point(0.3995, 0.616));
-        inner_points.push_back(Point(0.406, 0.683));
-        inner_points.push_back(Point(0.41, 0.69));
-        inner_points.push_back(Point(0.4087, 0.693));
-        inner_points.push_back(Point(0.4057, 0.6995));
-        inner_points.push_back(Point(0.443, 0.716));
-        inner_points.push_back(Point(0.619, 0.665));
-        //inner_points.push_back(Point(0.616, 0.658));
-        inner_points.push_back(Point(0.616, 0.658));
-        inner_points.push_back(Point(0.587212, 0.748627));
-        inner_points.push_back(Point(0.560721, 0.799572));
-        inner_points.push_back(Point(0.50623, 0.82348));
-        inner_points.push_back(Point(0.70453, 0.71765));
-        inner_points.push_back(Point(0.61066, 0.84981));
-        inner_points.push_back(Point(0.63566, 0.86962));
-        inner_points.push_back(Point(0.98399, 0.65027));
-        inner_points.push_back(Point(0.94484, 0.73309));
-        inner_points.push_back(Point(0.76338, 0.93442));        
-        inner_points.push_back(Point(0.81847, 0.94008));
-        inner_points.push_back(Point(0.84103, 0.94764));
-        inner_points.push_back(Point(0.80966, 0.96498));
-        inner_points.push_back(Point(0.81224, 0.98850));
-        inner_points.push_back(Point(0.81936, 0.99158));
-        inner_points.push_back(Point(0.9903, 0.7239));
-        inner_points.push_back(Point(0.9903001, 0.7426));
-        inner_points.push_back(Point(0.9883, 0.7644));
-        inner_points.push_back(Point(0.9891, 0.7769));
-        inner_points.push_back(Point(0.9875, 0.7983));
-        inner_points.push_back(Point(0.9859, 0.8119));
-        inner_points.push_back(Point(0.9875, 0.8556));
-        inner_points.push_back(Point(0.9859, 0.8782));
-        inner_points.push_back(Point(0.9879, 0.8984));
-        inner_points.push_back(Point(0.9871, 0.9140));
-        inner_points.push_back(Point(0.9915, 0.9401));
-        inner_points.push_back(Point(0.9911, 0.9534));
-        inner_points.push_back(Point(0.963147, 0.95718));
-        inner_points.push_back(Point(0.561222, 0.799493));
-        inner_points.push_back(Point(0.789622, 0.936035));
-    }
-*/
     // return int = inner_seeds.size(), set *pts =  {inner_seeds, outer_seeds, pts}
     inner_points.push_back(Point(0.5, 0.5));
     vector<Point> new_pts;
@@ -1282,16 +1079,6 @@ void Mesh<CellType>::save_mesh(int file_nr, string name, double t_sim) {
         // store sim time
         output_file << t_sim << ",";
 
-        // if cell type is Q_cell or Conway Cell save Q
-        if constexpr (is_same_v<CellType, Q_Cell> || is_same_v<CellType, Conway_Cell>) {
-            output_file << cells[i].Q;
-        }
-
-        // if cell type is SWE_cell save h, u, v
-        if constexpr (is_same_v<CellType, SWE_Cell>) {
-            output_file << cells[i].h << "," << cells[i].u << "," << cells[i].v;
-        }
-
         // if cell type is Euler_cell save rho, u, v, E, P
         if constexpr(is_same_v<CellType, Euler_Cell>) {
             output_file << cells[i].rho << "," << cells[i].u << "," << cells[i].v << "," << cells[i].E << "," << cells[i].get_P();
@@ -1312,129 +1099,6 @@ void Mesh<CellType>::save_mesh(int file_nr, string name, double t_sim) {
     output_file.close();
 
 }
-
-
-// function to save the change in the summed up Q value over the whole grid
-template <typename CellType>
-void Mesh<CellType>::save_Q_diff(double t, bool reset_file, bool is_density) {
-
-    double total_Q = 0;
-
-    // calculate total_Q summed up over mesh 
-    //(depending on wether it is a density multiply with volume) 
-    if (is_density) {
-        for (int i = 0; i < cells.size(); i++) {
-            total_Q += cells[i].getQ()*cells[i].volume;
-        }
-    } else {
-        for (int i = 0; i < cells.size(); i++) {
-            total_Q += cells[i].getQ();
-        }
-    }
-    
-    // open new file or in append mode
-    ofstream output_file;
-    if (reset_file) {
-        output_file = ofstream("../src/files/total_Q_diff.csv");
-        total_Q_initial = total_Q;
-    } else {
-        output_file = ofstream("../src/files/total_Q_diff.csv", ios::app);
-    }
-
-    // write caluclated difference in file
-    output_file << t << "," << total_Q-total_Q_initial << endl;
-
-    output_file.close();
-    
-
-}
-
-
-// function to calculate and store the L1 error of an advecting circle, requires Q_cells
-template <typename CellType>
-void Mesh<CellType>::save_L1_adv_circle(double t, bool reset_file, Point v, Point p0, double r) {
-
-    vector<double> Qs_num;
-    vector<double> Qs_ana;
-    Qs_num.reserve(cells.size());
-    Qs_ana.reserve(cells.size());
-
-    // get Q_values for numerical and analytical solution at current timestep
-    for (int i = 0; i<cells.size(); i++) {
-        Qs_num.push_back(cells[i].Q);
-        Qs_ana.push_back(advecting_circle(cells[i].seed, t, v, p0, r));
-    }
-
-    // open new file or in append mode
-    ofstream output_file;
-    if (reset_file) {
-        output_file = ofstream("../src/files/L1_error.csv");
-    } else {
-        output_file = ofstream("../src/files/L1_error.csv", ios::app);
-    }
-
-    // write caluclated L1 difference for given time in file
-    output_file << t << "," << L1_error(Qs_num, Qs_ana) << endl;
-    output_file.close();
-}
-
-
-// function to calculate and store the L1 error of an advecting circle, requires Q_cells
-template <typename CellType>
-void Mesh<CellType>::save_L1_adv_1Dstepfunc(double t, bool reset_file, double v, double a0, double b0) {
-
-    vector<double> Qs_num;
-    vector<double> Qs_ana;
-    Qs_num.reserve(cells.size());
-    Qs_ana.reserve(cells.size());
-
-    // get Q_values for numerical and analytical solution at current timestep
-    for (int i = 0; i<cells.size(); i++) {
-        Qs_num.push_back(cells[i].Q);
-        Qs_ana.push_back(advecting1D_stepfunc(cells[i].seed, t, v, a0, b0));
-    }
-
-    // open new file or in append mode
-    ofstream output_file;
-    if (reset_file) {
-        output_file = ofstream("../src/files/L1_error.csv");
-    } else {
-        output_file = ofstream("../src/files/L1_error.csv", ios::app);
-    }
-
-    // write caluclated L1 difference for given time in file
-    output_file << t << "," << L1_error(Qs_num, Qs_ana) << endl;
-    output_file.close();
-}
-
-// function to calculate and store the L1 error of an advecting circle, requires Q_cells
-template <typename CellType>
-void Mesh<CellType>::save_L1_swe_dam_break(double t, bool reset_file) {
-
-    vector<double> h_num;
-    vector<double> h_ana;
-    h_num.reserve(cells.size());
-    h_ana.reserve(cells.size());
-
-    // get h_values for numerical and analytical solution at current timestep
-    for (int i = 0; i<cells.size(); i++) {
-        h_num.push_back(cells[i].h);
-        h_ana.push_back(swe1D_dam_break(cells[i].seed, t));
-    }
-
-    // open new file or in append mode
-    ofstream output_file;
-    if (reset_file) {
-        output_file = ofstream("../src/files/L1_error.csv");
-    } else {
-        output_file = ofstream("../src/files/L1_error.csv", ios::app);
-    }
-
-    // write caluclated L1 difference for given time in file
-    output_file << t << "," << L1_error(h_num, h_ana) << endl;
-    output_file.close();
-}
-
 
 // ------------------------------------------------------------------------------------------------
 // calc timestep using CFL for euler eq
