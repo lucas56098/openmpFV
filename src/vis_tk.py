@@ -571,51 +571,6 @@ def plot_1D(filenames, labels, sort_option, title = '', x_label = '', y_label = 
 
             plt.plot(values['x'], values[val_names[quantity_index[0]]], color = 'red', label = 'analytic', linewidth = 1, rasterized = rasterized)
 
-        # optional add analytic solution for advecting step
-        if analytic_solution == "adv_step" and i == range(len(filenames))[-1]:
-            lsp = np.linspace(xlim[0], xlim[1], 1000)
-            Q_analytic = [analytic_Q(x, Q[0, 0], velocity, a, b) for x in lsp]
-            plt.plot(lsp, Q_analytic, label = labels[i] + '_analytic', color = 'red')
-
-        # optional add analytic solution for shallow water dam break
-        if analytic_solution == "swe_dam" and i == range(len(filenames))[-1]:
-
-            # calculate wave speeds
-            cl = np.sqrt(g*hl)
-            cr = np.sqrt(g*hr)
-
-            # root of this function gives cm
-            def get_cm(cm):
-                return -8 * cr**2 * cm**2 * (cl - cm)**2 + (cm**2 - cr**2)**2 * (cm**2 + cr**2)
-                
-            # get cm and hm by finding the root
-            cm = brentq(get_cm, min(cl, cr), max(cl, cr))
-            hm = (cm**2)/g
-
-            # given cm, hm now get analytical solution
-            def get_h_at_t_and_x(x, t, x0, cl, cm, cr, hl, hm, hr, g):
-
-                # positions of the shocks and rarefications
-                xa = x0 - cl*t                                              # leftmost rarefication
-                xb = x0 + t*(2*cl - 3*cm)                                   # rightmos rarefication
-                xc = x0 + t * ((2 * cm**2 * (cl - cm))/(cm**2 - cr**2))     # right shock
-
-                # return h according to analytical solution
-                if x < xa:
-                    return hl
-                elif xa < x and x < xb:
-                    return (4)/(9*g) * (cl - ((x-x0)/(2*t)))**2
-                elif xb < x and x < xc:
-                    return hm
-                elif xc < x:
-                    return hr
-                return None
-
-            # plot analytical solution given we now have a way to calculate it
-            lsp = np.linspace(xlim[0], xlim[1], 1000)
-            h_analytic = [get_h_at_t_and_x(x, Q[0, 0], x0, cl, cm, cr, hl, hm, hr, g) for x in lsp]
-            plt.plot(lsp, h_analytic, label = 'analytic', color = 'grey', linewidth = 1, alpha = 0.5, rasterized = rasterized)
-
     # optional set title
     if title != '':
         plt.title(title)
@@ -636,15 +591,6 @@ def plot_1D(filenames, labels, sort_option, title = '', x_label = '', y_label = 
         plt.savefig("figures/" + save_name + ".pdf")
 
     #plt.show()
-
-
-## analytic solution to 1D advection of step function
-def analytic_Q(x, t, velocity, a, b):
-    dx = t * velocity
-    if (x >= dx + a and x<b+dx):
-        return 1
-    else:
-        return 0
 
 
 # function to make 1D animation of the mesh
@@ -691,51 +637,6 @@ def animation1D(filerange, filenames, labels, sort_option, quantity_index, fps =
                 avg_Q = [np.mean(Q[i:i+bin_size, quantity_index[i]]) for i in range(0, int(len(Q[:, quantity_index[i]])), bin_size)]
                 plt.plot(avg_seed, avg_Q, label = labels[i] + '_avg', color = 'black')
         
-            # optional add analytic solution for advecting step
-            if analytic_solution == "adv_step":
-                lsp = np.linspace(xlim[0], xlim[1], 1000)
-                Q_analytic = [analytic_Q(x, Q[0, 0], velocity, a, b) for x in lsp]
-                plt.plot(lsp, Q_analytic, label = labels[i] + '_analytic', color = 'red')
-
-            # optional add analytic solution for shallow water dam break
-            if analytic_solution == "swe_dam" and i == range(len(filenames))[-1]:
-
-                # calculate wave speeds
-                cl = np.sqrt(g*hl)
-                cr = np.sqrt(g*hr)
-
-                # root of this function gives cm
-                def get_cm(cm):
-                    return -8 * cr**2 * cm**2 * (cl - cm)**2 + (cm**2 - cr**2)**2 * (cm**2 + cr**2)
-                
-                # get cm and hm by finding the root
-                cm = brentq(get_cm, min(cl, cr), max(cl, cr))
-                hm = (cm**2)/g
-
-                # given cm, hm now get analytical solution
-                def get_h_at_t_and_x(x, t, x0, cl, cm, cr, hl, hm, hr, g):
-
-                    # positions of the shocks and rarefications
-                    xa = x0 - cl*t                                              # leftmost rarefication
-                    xb = x0 + t*(2*cl - 3*cm)                                   # rightmos rarefication
-                    xc = x0 + t * ((2 * cm**2 * (cl - cm))/(cm**2 - cr**2))     # right shock
-
-                    # return h according to analytical solution
-                    if x < xa:
-                        return hl
-                    elif xa < x and x < xb:
-                        return (4)/(9*g) * (cl - ((x-x0)/(2*t)))**2
-                    elif xb < x and x < xc:
-                        return hm
-                    elif xc < x:
-                        return hr
-                    return None
-
-                # plot analytical solution given we now have a way to calculate it
-                lsp = np.linspace(xlim[0], xlim[1], 1000)
-                h_analytic = [get_h_at_t_and_x(x, Q[0, 0], x0, cl, cm, cr, hl, hm, hr, g) for x in lsp]
-                plt.plot(lsp, h_analytic, label = 'analytic', color = 'red', linewidth = 0.5)
-
             if analytic_solution == "shock_tube" and i == range(len(filenames))[-1]:
                 
                 ### For the analytical solution to the shock tube we use a 
@@ -866,34 +767,6 @@ def plot_L1_error_over_N(filenames, N_list, index = -1, dataname = "L1 error", r
     plt.legend()
     plt.savefig("figures/L1_error_over_N.pdf")
     #plt.show() 
-
-
-# function to plot difference in total Q over time
-def plot_Q_diff_over_time(filename = 'total_Q_diff', logscale = True, title = 'Change in total Q over time', xlabel = "time in [a.u]", ylabel = '|total_Q - total_Q_initial|', save_name = 'delta_Q_total', bar = 0):
-
-    # load file into data frame and get time and Q_diff
-    df = pd.read_csv('files/' + filename + '.csv', decimal=',', header=None)
-    times = df[0].astype(float).values
-    diff_Q = df[1].astype(float).values
-
-    # plot change
-    plt.plot(times, np.abs(diff_Q))
-
-    # optional log scale
-    if logscale:
-        plt.yscale('log')
-
-    # optional vlines
-    if bar != 0:
-        plt.axvline(bar, color = 'tab:orange')
-    
-    # title, label, save
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    plt.savefig("figures/"+ save_name +".pdf")
-    plt.show()    
-
 
 ### CREATE DIFFERENT STRUCTFILES ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # function to create structure file of an airfoil that can be used in a voronoi mesh simulation
