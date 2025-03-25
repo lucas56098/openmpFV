@@ -223,7 +223,7 @@ array<array<double, 4>, 2> Solver<CellType>::calc_euler_gradients(int i, int bou
 
     // do slope limiting
     array<array<double, 4>, 2> limited_gradientU;
-    //limited_gradientU = slope_limit_tvd(gradientU, i, U_i, boundary_cond, 1.7);
+    //limited_gradientU = slope_limit_tvd(gradientU, i, U_i, boundary_cond, 1);
     limited_gradientU = slope_limit_maxmin(gradientU, i, U_i, boundary_cond);
 
     // return gradient which now can be used to extrapolate the values

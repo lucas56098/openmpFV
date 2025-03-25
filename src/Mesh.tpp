@@ -2,6 +2,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <filesystem>
 #include <string>
 #include "Mesh.h"
 #include "Eigen/Dense"
@@ -631,154 +632,7 @@ void Mesh<CellType>::generate_vmesh1D(vector<Point> pts, bool repeating) {
 }
 
 
-// SET INITIAL CONDITIONS -------------------------------------------------------------------------
-// function to initalize sods shock tube on the mesh
-template <typename CellType>
-void Mesh<CellType>::initialize_euler_shock_tube() {
-
-    // make sure that the cell type is correct
-    if constexpr (is_same_v<CellType, Euler_Cell> == false) {
-        cerr << "initialize_euler_shock_tube called with wrong cell type, you must use Euler_Cells" << endl;
-        exit(EXIT_FAILURE);
-    }
-
-    // loop through all cells
-    for (int i = 0; i < cells.size(); i++) {
-
-        if (cells[i].seed.x < 0.5) { // + cells[i].seed.y < 1
-            cells[i].rho += 1-1;
-            cells[i].u = 0;
-            cells[i].v = 0;
-            cells[i].E += (1/(cells[i].gamma - 1)) * 1 - 1;
-        } else {
-            cells[i].rho += 0.125-1;
-            cells[i].u = 0;
-            cells[i].v = 0;
-            cells[i].E += (1/(cells[i].gamma - 1)) * 0.1 - 1;
-        }
-    }
-}
-
-// function to initalize a kelvin helmholtz instability on the mesh
-template <typename CellType>
-void Mesh<CellType>::initialize_kelvin_helmholtz() {
-
-    // make sure that the cell type is correct
-    if constexpr (is_same_v<CellType, Euler_Cell> == false) {
-        cerr << "initalize_kelvin_helmholtz called with wrong cell type, you must use Euler_Cells" << endl;
-        exit(EXIT_FAILURE);
-    }
-
-    // loop through all cells
-    for (int i = 0; i < cells.size(); i++) {
-
-        double pi = 3.14159265358979323846;
-
-        if (cells[i].seed.y > 0.3 && cells[i].seed.y < 0.7) {
-            cells[i].rho = 4; //0.5
-            cells[i].u = 0.1; //0.3
-            cells[i].v = 0;
-            cells[i].E = (1/(cells[i].gamma - 1)) + 0.5*cells[i].rho*(cells[i].u*cells[i].u);
-        } else {
-            cells[i].rho = 3; //0.2
-            cells[i].u = -0.1; //-0.3
-            cells[i].v = 0;
-            cells[i].E = (1/(cells[i].gamma - 1)) + 0.5*cells[i].rho*(cells[i].u*cells[i].u);
-        }
-    }
-  
-}
-
-
-
-// function to initalize a rayleigh taylor instability on the mesh
-template <typename CellType>
-void Mesh<CellType>::initialize_rayleigh_taylor(Point g) {
-
-    // make sure that the cell type is correct
-    if constexpr (is_same_v<CellType, Euler_Cell> == false) {
-        cerr << "initalize_rayleigh_taylor called with wrong cell type, you must use Euler_Cells" << endl;
-        exit(EXIT_FAILURE);
-    }
-
-    // loop through all cells
-    for (int i = 0; i < cells.size(); i++) {
-
-        double pi = 3.14159265358979323846;
-
-        cells[i].gamma = 1.4;
-
-        if (cells[i].seed.y > 0.5){// + 0.03*cos(pi*2*((cells[i].seed.x + 0.25)*2))) {
-            cells[i].rho = 2;
-            cells[i].u = 0;
-            cells[i].v = 0.0025*(1-cos(4*pi * (cells[i].seed.x - 0.5)))*(1 - cos(2*pi*cells[i].seed.y));
-            double P = 2.5 + cells[i].rho * g.y * (cells[i].seed.y - 0.5);
-            cells[i].E = (P/(cells[i].gamma - 1)) + 0.5*cells[i].rho*(cells[i].u*cells[i].u);
-        } else {
-            cells[i].rho = 1;
-            cells[i].u = 0;
-            cells[i].v = 0.0025*(1-cos(4*pi * (cells[i].seed.x - 0.5)))*(1 - cos(2*pi*cells[i].seed.y));
-            double P = 2.5 + cells[i].rho * g.y * (cells[i].seed.y - 0.5);
-            cells[i].E = (P/(cells[i].gamma - 1)) + 0.5*cells[i].rho*(cells[i].u*cells[i].u);
-        }
-    }
-  
-}
-
-
-// function to initialize a constant flow
-template <typename CellType>
-void Mesh<CellType>::initialize_const_flow(Point v) {
-    for (int i = 0; i<cells.size(); i++) {
-        cells[i].u += v.x;
-        cells[i].v += v.y;
-    }
-}
-
-
-// function to initialize a quad shock
-template <typename CellType>
-void Mesh<CellType>::initialize_quad_shock() {
-
-    // make sure that the cell type is correct
-    if constexpr (is_same_v<CellType, Euler_Cell> == false) {
-        cerr << "initialize_quad_shock called with wrong cell type, you must use Euler_Cells" << endl;
-        exit(EXIT_FAILURE);
-    }
-
-    // loop through all cells
-    for (int i = 0; i < cells.size(); i++) {
-
-        if (cells[i].seed.x >= 0.5 && cells[i].seed.y >= 0.5) {
-            cells[i].rho = 1.5;
-            cells[i].u = 0;
-            cells[i].v = 0;
-            cells[i].E = (1.5/(cells[i].gamma - 1)) + 0.5*cells[i].rho*(cells[i].u*cells[i].u + cells[i].v*cells[i].v);
-        } else if (cells[i].seed.x < 0.5 && cells[i].seed.y > 0.5) {
-            cells[i].rho = 0.5323;
-            cells[i].u = 1.206;
-            cells[i].v = 0;
-            cells[i].E = (0.3/(cells[i].gamma - 1)) + 0.5*cells[i].rho*(cells[i].u*cells[i].u + cells[i].v*cells[i].v);
-        } else if (cells[i].seed.x < 0.5 && cells[i].seed.y < 0.5) {
-            cells[i].rho = 0.138;
-            cells[i].u = 1.206;
-            cells[i].v = 1.206;
-            cells[i].E = (0.029/(cells[i].gamma - 1)) + 0.5*cells[i].rho*(cells[i].u*cells[i].u + cells[i].v*cells[i].v);
-        } else if (cells[i].seed.x > 0.5 && cells[i].seed.y < 0.5) {
-            cells[i].rho = 0.5323;
-            cells[i].u = 0;
-            cells[i].v = 1.206;
-            cells[i].E = (0.3/(cells[i].gamma - 1)) + 0.5*cells[i].rho*(cells[i].u*cells[i].u + cells[i].v*cells[i].v);
-        }
-    }
-
-}
-
-
-
-
-
-
+// Boundary Structures -------------------------------------------------------------------------
 // Function to create an internal boundary structure (just a square at the moment)
 template <typename CellType>
 void Mesh<CellType>::initialize_boundary_struct(Point p0, double l_x, double l_y) {
@@ -981,7 +835,6 @@ Point Mesh<CellType>::x_to_ksi(Point x, int index) {
 }
 
 
-
 // initalizes step function on a DG_Q_Cell grid using L2 projection and gaussian quadrature
 template <typename CellType>
 void Mesh<CellType>::DG_2D_initialize_step_function(Point p0, Point v, double a, double b) {
@@ -1040,11 +893,26 @@ void Mesh<CellType>::DG_2D_initialize_gaussian_function(Point p0, double A, doub
 // SAVE DATA TO FILE ------------------------------------------------------------------------------
 // saves mesh into csv file readable for python script
 template <typename CellType>
-void Mesh<CellType>::save_mesh(int file_nr, string name, double t_sim) {
+void Mesh<CellType>::save_mesh(string folder_name, bool cartesian, int N_row, int sim_order, int boundary_cond, bool is_repeating, double total_sim_time, string addon, int counter, double t_sim) {
 
-    // open correct file
+    // make sure folders exist
+    string path = "src/files";
+    string folder_path = path + "/" + folder_name;
+    if (!filesystem::exists(path)) {filesystem::create_directories(path);}
+    if (!filesystem::exists(folder_path)) {filesystem::create_directories(folder_path);}
+
+    // open file
     string filename;
-    filename = "../src/files/" + name + to_string(file_nr) + ".csv"; 
+    
+    string t_sim_s = to_string(int(total_sim_time));
+    string t_sim_ds = to_string(int(total_sim_time * 10) % 10);
+
+    filename = folder_path + "/" + (cartesian ? "c" : "v") + "_n" + to_string(N_row) + "_" + (is_same_v<CellType, Euler_Cell> ? "FV" : "DG") + to_string(sim_order) + "_BC" + to_string(boundary_cond) + (is_repeating ? "p" : "") + "_" + t_sim_s + "_" + t_sim_ds + "s_" + addon + "_step" + to_string(counter) + ".csv";
+
+    if (counter == 0) {
+        cout << "file storage format: " << filename << endl;
+    }
+
     ofstream output_file(filename);
     
     // get maximum edge number for column correction later on
@@ -1111,7 +979,6 @@ double Mesh<CellType>::dt_CFL_euler(double CFL) {
     for (int i = 0; i < cells.size(); i++) {
 
         double c_i = sqrt(cells[i].get_gamma() * (cells[i].get_P()/cells[i].get_rho()));
-        //double R_i = cbrt((3 * cells[i].volume)/(4 * M_PI)); <- that would be correct for 3D
         double R_i = sqrt(cells[i].volume / M_PI); // 2D -> hence circle
         double v_abs = sqrt((cells[i].get_u()* cells[i].get_u()) + (cells[i].get_u()* cells[i].get_u()));
 

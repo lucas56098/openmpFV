@@ -19,7 +19,6 @@ public:
 
     // cell list
     vector<CellType> cells;
-    double total_Q_initial;
     bool is_cartesian = false;
     double n_horizontal;
     double n_vertical;
@@ -33,11 +32,6 @@ public:
 
     // initial conditions
     void initialize_boundary_struct(Point p0, double l_x, double l_y);
-    void initialize_euler_shock_tube();
-    void initialize_kelvin_helmholtz();
-    void initialize_rayleigh_taylor(Point g);
-    void initialize_const_flow(Point v);
-    void initialize_quad_shock();
 
     // DG initial conditions
     // intialize general function
@@ -50,7 +44,7 @@ public:
     void DG_2D_initialize_gaussian_function(Point p0 = Point(0.5, 0.5), double A = 1, double sigma = 0.25);
 
     // save mesh
-    void save_mesh(int file_nr, string name, double t_sim);
+    void save_mesh(string folder_name, bool cartesian, int N_row, int sim_order, int boundary_cond, bool is_repeating, double total_sim_time, string addon, int counter, double t_sim);
 
 
 private:

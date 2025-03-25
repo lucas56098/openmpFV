@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(hydro_bsc_project VERSION 0.1.0 LANGUAGES C CXX)
 
 # Set the compiler explicitly
@@ -34,6 +34,7 @@ add_executable(hydro
 
     # further utilities
     utilities/Functions.cpp
+    utilities/InitialCond.cpp
     
     # imported voronoi_mesh_project
     vmp/Halfplane.cpp 
