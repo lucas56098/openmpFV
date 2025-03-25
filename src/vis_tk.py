@@ -455,9 +455,7 @@ def animation2D(file_name, frames, fps=30, animation_name='animation2D', cbar_la
     ax.set_ylabel(ylabel)
     ax.set_xticklabels([''] * len(ax.get_xticks()))
     ax.set_yticklabels([''] * len(ax.get_yticks()))
-    plt.gca().invert_xaxis()
-    plt.gca().invert_yaxis()
-
+    
     # optional set title
     if title != '':
         ax.set_title(title)
