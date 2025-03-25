@@ -20,7 +20,6 @@
 using namespace std;
 using namespace Eigen;
 
-
 // MAIN :  -------------------------------------------------------------------------------------------------------
 int main () {
 
@@ -35,6 +34,8 @@ int main () {
     bool is_1D = getenv("HYDRO_IS_1D") ? atoi(getenv("HYDRO_IS_1D")) : true;
     bool structure = getenv("HYDRO_STRUCTURE") ? atoi(getenv("HYDRO_STRUCTURE")) : false;
     int lloyd_steps = getenv("HYDRO_LLOYD_STEPS") ? atoi(getenv("HYDRO_LLOYD_STEPS")) : 0;
+    double box_L_x = getenv("HYDRO_BOX_L_X") ? atof(getenv("HYDRO_BOX_L_X")) : 1.0;
+    double box_L_y = getenv("HYDRO_BOX_L_Y") ? atof(getenv("HYDRO_BOX_L_Y")) : 1.0;
 
     // boundary
     int boundary_cond = getenv("HYDRO_BOUNDARY_COND") ? atoi(getenv("HYDRO_BOUNDARY_COND")) : -1; // -1 : reflecting, 1 : zero gradient
@@ -57,7 +58,7 @@ int main () {
     string ic_file_name = getenv("HYDRO_IC_FILE") ? getenv("HYDRO_IC_FILE") : "not-specified";
     
     if (ic_value != 6) {
-        grid.generate_grid(cartesian, is_1D, N_row, lloyd_steps, is_repeating, structure);
+        grid.generate_grid(cartesian, is_1D, N_row, lloyd_steps, is_repeating, structure, box_L_x, box_L_y);
     } else {
         grid.load_mesh_from_file(ic_file_name, is_repeating);
     }
@@ -70,8 +71,8 @@ int main () {
     } else if (ic_value == 2) {
         g_acc = Point(0, -0.1);
         initialize_rayleigh_taylor(grid, g_acc);
-        grid.initialize_boundary_struct(Point(0, 0), 0.25, 1);
-        grid.initialize_boundary_struct(Point(0.75, 0), 0.25, 1);
+        //grid.initialize_boundary_struct(Point(0, 0), 0.25, 1);
+        //grid.initialize_boundary_struct(Point(0.75, 0), 0.25, 1);
     } else if (ic_value == 3) {
         initialize_quad_shock(grid);
     } else if (ic_value == 4) {

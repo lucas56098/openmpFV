@@ -201,17 +201,17 @@ vector<Point> Mesh<CellType>::generate_seed_points(int N, bool fixed_random_seed
 // GRID GENERATION: -------------------------------------------------------------------------------
 // calls the generate Mesh functions depending on specified options (cartesian, 1D/2D, N_row, optional lloyd preprocessing, repeating boundary conditions)
 template <typename CellType>
-void Mesh<CellType>::generate_grid(bool cartesian, bool is_1D, int N_row, int lloyd_iterations, bool repeating, bool structure) {
+void Mesh<CellType>::generate_grid(bool cartesian, bool is_1D, int N_row, int lloyd_iterations, bool repeating, bool structure, double L_x, double L_y) {
 
     if (cartesian) {
         // generate cartesian mesh
         if (is_1D) {
             // do it in 1D
-            this->generate_uniform_grid1D(Point(0, 0), N_row, 1.0/static_cast<double>(N_row), repeating);
+            this->generate_uniform_grid1D(Point(0, 0), N_row, L_x/static_cast<double>(N_row), repeating);
             is_cartesian = true;
         } else {
             // do it in 2D
-            this->generate_uniform_grid2D(Point(0, 0), N_row, N_row, 1.0/static_cast<double>(N_row), 1.0/static_cast<double>(N_row), repeating);
+            this->generate_uniform_grid2D(Point(0, 0), N_row, static_cast<int>(static_cast<double>(N_row)*(L_y/L_x)), L_x/static_cast<double>(N_row), L_x/static_cast<double>(N_row), repeating);
             is_cartesian = true;
         }
     } else {

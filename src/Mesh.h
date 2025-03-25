@@ -35,7 +35,7 @@ public:
     int N_basisfunc;
     
     // generate mesh
-    void generate_grid(bool cartesian, bool is_1D, int N_row, int lloyd_iterations = 0, bool repeating = false, bool structure = false);
+    void generate_grid(bool cartesian, bool is_1D, int N_row, int lloyd_iterations = 0, bool repeating = false, bool structure = false, double L_x = 1.0, double L_y = 1.0);
     
     // calc cfl
     double dt_CFL_euler(double CFL = 0.4);

@@ -67,17 +67,17 @@ void initialize_rayleigh_taylor(Mesh<Euler_Cell> &grid, Point g) {
 
         cells[i].gamma = 1.4;
 
-        if (cells[i].seed.y > 0.5){// + 0.03*cos(pi*2*((cells[i].seed.x + 0.25)*2))) {
+        if (cells[i].seed.y > 0.75){// + 0.03*cos(pi*2*((cells[i].seed.x + 0.25)*2))) {
             cells[i].rho = 2;
             cells[i].u = 0;
-            cells[i].v = 0.0025*(1-cos(4*pi * (cells[i].seed.x - 0.5)))*(1 - cos(2*pi*cells[i].seed.y));
-            double P = 2.5 + cells[i].rho * g.y * (cells[i].seed.y - 0.5);
+            cells[i].v = 0.0025*(1-cos(4.0*pi * (cells[i].seed.x)))*(1 - cos(4.0*pi*cells[i].seed.y/3.0));
+            double P = 2.5 + cells[i].rho * g.y * (cells[i].seed.y - 0.75);
             cells[i].E = (P/(cells[i].gamma - 1)) + 0.5*cells[i].rho*(cells[i].u*cells[i].u);
         } else {
             cells[i].rho = 1;
             cells[i].u = 0;
-            cells[i].v = 0.0025*(1-cos(4*pi * (cells[i].seed.x - 0.5)))*(1 - cos(2*pi*cells[i].seed.y));
-            double P = 2.5 + cells[i].rho * g.y * (cells[i].seed.y - 0.5);
+            cells[i].v = 0.0025*(1-cos(4.0*pi * (cells[i].seed.x)))*(1 - cos(4.0*pi*cells[i].seed.y/3.0));
+            double P = 2.5 + cells[i].rho * g.y * (cells[i].seed.y - 0.75);
             cells[i].E = (P/(cells[i].gamma - 1)) + 0.5*cells[i].rho*(cells[i].u*cells[i].u);
         }
     }
