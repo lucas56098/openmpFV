@@ -53,18 +53,18 @@ array<double, 4> Solver<CellType>::rotate2Deuler(array<double, 4> vec, double an
 template <typename CellType>
 void Solver<CellType>::euler(double dt, int boundary_cond, int sim_order, Point g) {
 
-    // Ensure correct cell type
+    // ensure correct cell type
     if constexpr (is_same_v<CellType, Euler_Cell> == false) {
-        std::cerr << "euler step called on Mesh with wrong cell type, you must use Euler_Cells" << std::endl;
+        cerr << "euler step called on Mesh with wrong cell type, you must use Euler_Cells" << endl;
         exit(EXIT_FAILURE);
     }
 
     int num_cells = grid->cells.size();
-    std::vector<std::array<double, 4>> Q_new(num_cells);  // Preallocate to avoid race conditions
+    vector<array<double, 4>> Q_new(num_cells);
 
-    std::vector<std::array<std::array<double, 4>, 2>> gradients;
+    vector<array<array<double, 4>, 2>> gradients;
     
-    // Compute gradients in parallel if sim_order == 2
+    // gradients in parallel if sim_order == 2
     if (sim_order == 2) {
         gradients.resize(num_cells);
         #pragma omp parallel for
@@ -77,16 +77,16 @@ void Solver<CellType>::euler(double dt, int boundary_cond, int sim_order, Point 
     #pragma omp parallel for
     for (int i = 0; i < num_cells; i++) {
 
-        std::array<double, 4> puvE_i_n = {grid->cells[i].rho, grid->cells[i].u, grid->cells[i].v, grid->cells[i].E};
-        std::array<double, 4> total_flux = {0, 0, 0, 0};
+        array<double, 4> puvE_i_n = {grid->cells[i].rho, grid->cells[i].u, grid->cells[i].v, grid->cells[i].E};
+        array<double, 4> total_flux = {0, 0, 0, 0};
 
         // Sum edge flux * edge_length
         for (int j = 0; j < grid->cells[i].edges.size(); j++) {
 
             // Get value of the neighboring cell
-            std::array<double, 4> puvE_j_n = get_puvE_j(puvE_i_n, i, j, boundary_cond);
-            std::array<double, 4> puvE_i_ext = puvE_i_n;
-            std::array<double, 4> puvE_j_ext = puvE_j_n;
+            array<double, 4> puvE_j_n = get_puvE_j(puvE_i_n, i, j, boundary_cond);
+            array<double, 4> puvE_i_ext = puvE_i_n;
+            array<double, 4> puvE_j_ext = puvE_j_n;
             
             if (sim_order == 2) {
                 // Perform linear extrapolation in space and time
@@ -95,7 +95,7 @@ void Solver<CellType>::euler(double dt, int boundary_cond, int sim_order, Point 
             }
 
             // Compute flux
-            std::array<double, 4> F_ij = hll_solver_euler_2D(puvE_i_ext, puvE_j_ext, i, j);
+            array<double, 4> F_ij = hll_solver_euler_2D(puvE_i_ext, puvE_j_ext, i, j);
 
             // Get edge length
             double l_i_j = grid->cells[i].edges[j].length;
@@ -108,7 +108,7 @@ void Solver<CellType>::euler(double dt, int boundary_cond, int sim_order, Point 
         }
 
         // Compute new values
-        std::array<double, 4> puvE_i_np1;
+        array<double, 4> puvE_i_np1;
         double A = grid->cells[i].volume;
         puvE_i_np1[0] = puvE_i_n[0] - (dt / A) * total_flux[0];
         //if (puvE_i_np1[0] < 0.0001) {
@@ -120,7 +120,9 @@ void Solver<CellType>::euler(double dt, int boundary_cond, int sim_order, Point 
 
         // Store new values (preallocated array prevents race conditions)
         Q_new[i] = puvE_i_np1;
+
     }
+
 
     // Apply updates to grid in parallel
     #pragma omp parallel for

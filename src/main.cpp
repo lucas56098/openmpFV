@@ -50,12 +50,19 @@ int main () {
 
     // GRID GENERATION ------------------------------------
     Mesh<Euler_Cell> grid(1);
-    grid.generate_grid(cartesian, is_1D, N_row, lloyd_steps, is_repeating, structure);
-
+    
     // INITIAL CONDITIONS ---------------
     // 0 : ShockTube, 1 : KH, 2: RT, 3: quadshock1, 4: quadshock2, 5: const_flow
     int ic_value = getenv("HYDRO_IC_VALUE") ? atoi(getenv("HYDRO_IC_VALUE")) : 0;
-    Point g_acc = Point(0,0);
+    string ic_file_name = getenv("HYDRO_IC_FILE") ? getenv("HYDRO_IC_FILE") : "not-specified";
+    
+    if (ic_value != 6) {
+        grid.generate_grid(cartesian, is_1D, N_row, lloyd_steps, is_repeating, structure);
+    } else {
+        grid.load_mesh_from_file(ic_file_name, is_repeating);
+    }
+
+    Point g_acc;
     if (ic_value == 0) {
         initialize_euler_shock_tube(grid);
     } else if (ic_value == 1) {
@@ -114,6 +121,7 @@ int main () {
     // maximum memory
     long long maxrss = get_maxrss_memory();
     
+
     cout << "done" << endl;
     return 0;    
 }

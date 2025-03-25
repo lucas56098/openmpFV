@@ -16,6 +16,12 @@
 #include <omp.h>
 #include <type_traits>
 #include <random>
+#include <sstream>
+
+template <typename CellType>
+Mesh<CellType>::Mesh() {
+    N_basisfunc = 0;
+}
 
 template <typename CellType>
 Mesh<CellType>::Mesh(int N_bfunc) {
@@ -367,12 +373,11 @@ void Mesh<CellType>::generate_vmesh2D(vector<Point> pts, bool repeating, bool po
 
     // generate vmesh
     VoronoiMesh vmesh(pts);
-    vmesh.do_point_insertion();
-    //vmesh.construct_mesh();
+
     if (point_insertion) {
-        //vmesh.do_point_insertion();
+        vmesh.do_point_insertion();
     } else {
-        //vmesh.construct_mesh();
+        vmesh.construct_mesh();
     }
 
 
@@ -947,9 +952,9 @@ void Mesh<CellType>::save_mesh(string folder_name, bool cartesian, int N_row, in
         // store sim time
         output_file << t_sim << ",";
 
-        // if cell type is Euler_cell save rho, u, v, E, P
+        // if cell type is Euler_cell save rho, u, v, E, P, gamma
         if constexpr(is_same_v<CellType, Euler_Cell>) {
-            output_file << cells[i].rho << "," << cells[i].u << "," << cells[i].v << "," << cells[i].E << "," << cells[i].get_P();
+            output_file << cells[i].rho << "," << cells[i].u << "," << cells[i].v << "," << cells[i].E << "," << cells[i].get_P() << "," << cells[i].gamma;
         }
 
         // if cell type is DG_Q_Cell save all Q out of vector
@@ -967,6 +972,101 @@ void Mesh<CellType>::save_mesh(string folder_name, bool cartesian, int N_row, in
     output_file.close();
 
 }
+
+// load data from file
+template <typename CellType>
+vector<Data> Mesh<CellType>::load_file(string file_name) {
+    
+    ifstream file(file_name);
+    vector<Data> data;
+    
+    if (!file.is_open()) {
+        cerr << "Error opening file: " << file_name << endl;
+        return data;
+    }
+    
+    string line;
+    getline(file, line); // skip header
+    
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string seed_data, coords_data, q_data;
+        
+        if (!getline(ss, seed_data, '|') ||
+            !getline(ss, coords_data, '|') ||
+            !getline(ss, q_data, '|')) {
+            continue;
+        }
+        
+        Data entry;
+        
+        // parse seed points
+        stringstream seed_ss(seed_data);
+        string value;
+        while (getline(seed_ss, value, ',')) {
+            entry.seed_points.push_back(stod(value));
+        }
+        
+        // parse polygons
+        stringstream coords_ss(coords_data);
+        string segment;
+        while (getline(coords_ss, segment, ';')) {
+            if (!segment.empty()) {
+                vector<double> point;
+                stringstream point_ss(segment);
+                while (getline(point_ss, value, ',')) {
+                    point.push_back(stod(value));
+                }
+                entry.polygon.push_back(point);
+            }
+        }
+        if (!entry.polygon.empty()) {
+            entry.polygon.push_back(entry.polygon[0]);
+        }
+        
+        // parse quantities
+        stringstream q_ss(q_data);
+        while (getline(q_ss, value, ',')) {
+            entry.quantities.push_back(stod(value));
+        }
+        
+        data.push_back(entry);
+    }
+    
+    file.close();
+
+    return data;
+}
+
+// load mesh from file (FV + Voronoi only)
+template <typename CellType>
+void Mesh<CellType>::load_mesh_from_file(string file_name, bool is_repeating) {
+
+    vector<Data> data;
+    data = load_file(file_name);
+
+    // generate mesh based on seedpoints
+    vector<Point> pts;
+    pts.reserve(data.size());
+    for (int i = 0; i < data.size(); i++) {
+        pts.push_back(Point(data[i].seed_points[0], data[i].seed_points[1]));
+    }
+    this->generate_vmesh2D(pts, is_repeating);
+
+    // load quantity values into mesh
+    for (int i = 0; i < cells.size(); i++) {
+        cells[i].rho = data[i].quantities[1];
+        cells[i].u = data[i].quantities[2];
+        cells[i].v = data[i].quantities[3];
+        cells[i].E = data[i].quantities[4];
+        cells[i].gamma = data[i].quantities[6];
+        cells[i].index = i;
+    }
+    is_cartesian = false;
+    
+    cout << "loaded IC from file: " << file_name << endl;
+}
+
 
 // ------------------------------------------------------------------------------------------------
 // calc timestep using CFL for euler eq
@@ -990,7 +1090,6 @@ double Mesh<CellType>::dt_CFL_euler(double CFL) {
 
     return min_dt;
 }
-
 
 template <typename CellType>
 Mesh<CellType>::~Mesh() {}

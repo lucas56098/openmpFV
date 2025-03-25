@@ -2,13 +2,13 @@
 
 # hydro variables ------
 # file naming
-export HYDRO_FOLDER="RT_100" 
-export HYDRO_TXT_ADDON="RT"
+export HYDRO_FOLDER="file_load" 
+export HYDRO_TXT_ADDON="test"
 
 # mesh options
-export HYDRO_N_ROW=50
-export HYDRO_CARTESIAN=1    # true or false
-export HYDRO_IS_1D=1        # true or false
+export HYDRO_N_ROW=30
+export HYDRO_CARTESIAN=0    # true or false
+export HYDRO_IS_1D=0        # true or false
 export HYDRO_STRUCTURE=0    # true or false
 export HYDRO_LLOYD_STEPS=0 
 
@@ -21,7 +21,7 @@ export HYDRO_TOTAL_SIM_TIME=1.5
 export HYDRO_CFL=0.1
 export HYDRO_TOTAL_SNAPSHOTS=10
 export HYDRO_SIM_ORDER=2            # 1st or 2nd
-export HYDRO_NUM_THREADS=8         # omp thread number
+export HYDRO_NUM_THREADS=1        # omp thread number
 
 # initial conditions
 # 0 : ShockTube
@@ -30,7 +30,10 @@ export HYDRO_NUM_THREADS=8         # omp thread number
 # 3 : quadshock1 
 # 4 : quadshock2 
 # 5 : const_flow
-export HYDRO_IC_VALUE=0
+# 6 : load from file (also specify directory -> HYDOR_IC_FILE)
+#      ! only FV + Voronoi --- overwrites ALL other specified mesh mesh options --- !
+export HYDRO_IC_VALUE=6
+export HYDRO_IC_FILE="src/files/file_load/v_n30_FV2_BC1_1_5s_test_2_step0.csv"
 
 # ------- Optional: -build to compile hydro before running it -------
 BUILD=false

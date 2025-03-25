@@ -10,11 +10,21 @@
 #ifndef Mesh_h
 #define Mesh_h
 
+// for loading back the file
+struct Data {
+    vector<double> seed_points;
+    vector<vector<double>> polygon;
+    vector<double> quantities;
+};
+
+
 template <typename CellType>
 class Mesh {
 
+    
 public:
-    Mesh<CellType>(int N_bfunc = 1);
+    Mesh<CellType>();
+    Mesh<CellType>(int N_bfunc);
     ~Mesh<CellType>();
 
     // cell list
@@ -43,8 +53,10 @@ public:
     void DG_2D_initialize_step_function(Point p0 = Point(0, 0), Point v = Point(0.5, 0.5), double a = 0.3, double b = 0.3);
     void DG_2D_initialize_gaussian_function(Point p0 = Point(0.5, 0.5), double A = 1, double sigma = 0.25);
 
-    // save mesh
+    // mesh storage
     void save_mesh(string folder_name, bool cartesian, int N_row, int sim_order, int boundary_cond, bool is_repeating, double total_sim_time, string addon, int counter, double t_sim);
+    vector<Data> load_file(string file_name);
+    void load_mesh_from_file(string file_name, bool is_repeating);
 
 
 private:
