@@ -8,12 +8,14 @@
 class VoronoiMesh {
 
 public:
-    VoronoiMesh(vector<Point> points);
+    VoronoiMesh(vector<Point> points, double lx, double ly);
     ~VoronoiMesh();
     vector<Point> pts;
     vector<VoronoiCell> vcells;
     long total_steps;
     int total_frame_counter;
+    double L_x;
+    double L_y;
     void construct_mesh();
     void insert_cell(Point new_seed, int new_seed_index);
     void save_mesh_to_files(int nr);

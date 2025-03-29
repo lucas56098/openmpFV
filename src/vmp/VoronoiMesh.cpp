@@ -1,14 +1,16 @@
 #include "VoronoiMesh.h"
 #include <fstream>
-#include <math.h>
 #include <string>
 #include <iostream>
 #include <set>
+#include <cmath>
 
-VoronoiMesh::VoronoiMesh(vector<Point> points) {
+VoronoiMesh::VoronoiMesh(vector<Point> points, double lx, double ly) {
     pts = points;
     total_steps = 0;
     total_frame_counter = 0;
+    L_x = lx;
+    L_y = ly;
     //vcells.reserve(pts.size());
 }
 
@@ -26,7 +28,7 @@ void VoronoiMesh::construct_mesh() {
     for (int i = 0; i < pts.size(); i++) {
 
         // construct individual cell and add to vcells vector        
-        VoronoiCell vcell(pts[i], i);
+        VoronoiCell vcell(pts[i], i, L_x, L_y);
         vcell.construct_cell(pts, indices);
         vcells.push_back(vcell);
     }
@@ -205,7 +207,7 @@ void VoronoiMesh::insert_cell(Point new_seed, int new_seed_index) {
     int current_cell_index = cell_im_in_index;
     
     // generate new_cell and initial halfplane
-    VoronoiCell new_cell(new_seed, new_seed_index);
+    VoronoiCell new_cell(new_seed, new_seed_index, L_x, L_y);
     Halfplane current_hp(new_seed, vcells[cell_im_in_index].seed, new_seed_index, cell_im_in_index);
     Halfplane first_hp = current_hp;
 
@@ -309,7 +311,7 @@ void VoronoiMesh::insert_cell(Point new_seed, int new_seed_index) {
 
                     // if counter exeeds limit just generate the cell with the half plane intersection algoithm -> way slower in that case but more robust.
                     cout << "Failed to generate cell using pt_insertion. At: " << pts.size() <<  ". try construct_cell" << endl;
-                    VoronoiCell alternative_cell(new_seed, new_seed_index);
+                    VoronoiCell alternative_cell(new_seed, new_seed_index, L_x, L_y);
                     vector<int> pts_indices;
                     for (int i = 0; i<pts.size(); i++) {
                         pts_indices.push_back(i);

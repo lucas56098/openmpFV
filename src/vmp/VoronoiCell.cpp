@@ -7,13 +7,25 @@
 
 VoronoiCell::VoronoiCell() {}
 
-VoronoiCell::VoronoiCell(Point in_seed, int in_index) {
+VoronoiCell::VoronoiCell(Point in_seed, int in_index, double L_x = 1.0, double L_y = 1.0) {
     
     index = in_index;
     seed = in_seed;
     halfplanes.reserve(10);
     edges.reserve(10);
     verticies.reserve(10);
+
+    Point mid = Point(0.5*L_x, 0.5*L_y);
+    Point top = Point(0.5*L_x, 1.5*L_y); 
+    Point right = Point(1.5*L_x, 0.5*L_y);
+    Point bottom = Point(0.5*L_x, -0.5*L_y);
+    Point left = Point(-0.5*L_x, 0.5*L_y);
+
+    // generate boundary halfplanes
+    halfplanes.push_back(Halfplane(mid, top, -1, -2, true));
+    halfplanes.push_back(Halfplane(mid, right, -1, -3, true));
+    halfplanes.push_back(Halfplane(mid, bottom, -1, -4, true));
+    halfplanes.push_back(Halfplane(mid, left, -1, -5, true));
 
 }
 
@@ -73,11 +85,11 @@ void VoronoiCell::intersect_two_halfplanes(Halfplane &hp1, Halfplane &hp2, vecto
 // generate all halfplanes + boundary halfplanes
 void VoronoiCell::generate_halfplane_vector(vector<Point> pts,  vector<int> indices) {
     
-    // generate boundary halfplanes
-    halfplanes.push_back(Halfplane(Point(0.5,0.5), Point(0.5,1.5), -1, -2, true));
-    halfplanes.push_back(Halfplane(Point(0.5,0.5), Point(1.5, 0.5), -1, -3,true));
-    halfplanes.push_back(Halfplane(Point(0.5,0.5), Point(0.5,-0.5), -1, -4, true));
-    halfplanes.push_back(Halfplane(Point(0.5,0.5), Point(-0.5,0.5), -1, -5, true));
+    // generate boundary halfplanes # beim obersten muss 1.5 hin
+    //halfplanes.push_back(Halfplane(Point(0.5,0.5), Point(0.5, 1), -1, -2, true));
+    //halfplanes.push_back(Halfplane(Point(0.5,0.5), Point(1.5, 0.5), -1, -3,true));
+    //halfplanes.push_back(Halfplane(Point(0.5,0.5), Point(0.5,-0.5), -1, -4, true));
+    //halfplanes.push_back(Halfplane(Point(0.5,0.5), Point(-0.5,0.5), -1, -5, true));
 
     // generate usual halfplanes
     for (int i = 0; i<pts.size(); i++) {

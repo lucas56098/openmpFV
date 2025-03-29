@@ -16,7 +16,7 @@ class VoronoiCell {
 
 public:
     VoronoiCell();
-    VoronoiCell(Point in_seed, int index);
+    VoronoiCell(Point in_seed, int index, double L_x, double L_y);
     ~VoronoiCell();
     int index;
     Point seed;
@@ -31,6 +31,7 @@ public:
     double get_signed_angle(Point u, Point v);
     long long calculate_cell_memory(bool use_capacity);
     Point get_centroid();
+    
 private:
     void search_hp_closest_to_seed(Halfplane &first_hp);
 
