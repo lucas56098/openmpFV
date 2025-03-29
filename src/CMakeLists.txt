@@ -22,12 +22,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Find and enable OpenMP
-find_package(OpenMP REQUIRED)
-if(OpenMP_CXX_FOUND)
-    message(STATUS "OpenMP found, linking OpenMP to hydro")
-endif()
-
 add_executable(hydro 
     
     # main program
@@ -55,12 +49,6 @@ add_executable(hydro
 # Set the name of the compiled program to "hydro"
 set_target_properties(hydro PROPERTIES OUTPUT_NAME "hydro")
 
-# Link OpenMP to hydro
-if(OpenMP_CXX_FOUND)
-    target_link_libraries(hydro PUBLIC OpenMP::OpenMP_CXX)
-endif()
-
-# Alternative: Force `-fopenmp` manually (if needed)
 target_compile_options(hydro PRIVATE -fopenmp)
 target_link_options(hydro PRIVATE -fopenmp)
 
