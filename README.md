@@ -6,11 +6,8 @@ Includes grid generation methods from [vmp](https://github.com/lucas56098/vorono
 The original version of this code was part of my bachelor thesis and can be found [here](https://github.com/lucas56098/hydro_bsc_project). This version has various improvements and will recieve further updates in the future.
 
 ---
-
-<div style="border: 1px solid #ffcc00; background-color: #fff3cd; padding: 10px; border-radius: 5px;">
-  <strong>⚠️ Warning: </strong> Construction Zone<br>
-  Expect large changes in single commits. Things may break, change, or evolve rapidly. No documentation so far...
-</div>
+> [!Warning]  
+> Construction Zone: Expect large changes in single commits. Thins may break, change or evolve rapidly. No documentation so far...
 
 #### Improvements:
 - openMP parallelization of hydro calculations
