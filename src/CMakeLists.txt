@@ -2,13 +2,14 @@ cmake_minimum_required(VERSION 3.10)
 project(hydro_bsc_project VERSION 0.1.0 LANGUAGES C CXX)
 
 # Try to find g++-14 on macOS (Homebrew GCC installation)
-find_program(GCC_COMPILER NAMES g++-14)
+find_program(GCC_COMPILER NAMES gcc-14)
+find_program(Gpp_COMPILER NAMES g++-14)
 
 # Check if g++-14 is found
 if(GCC_COMPILER)
-    set(CMAKE_CXX_COMPILER ${GCC_COMPILER})
+    set(CMAKE_CXX_COMPILER ${Gpp_COMPILER})
     set(CMAKE_C_COMPILER ${GCC_COMPILER})
-    message(STATUS "Using GCC compiler (g++-14): ${GCC_COMPILER}")
+    message(STATUS "Using GCC compiler (g++-14): ${Gpp_COMPILER}")
 else()
     # If g++-14 is not found, use system default and inform user
     message(STATUS "Using default system compiler.")
