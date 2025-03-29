@@ -39,6 +39,7 @@ private:
     
     // riemann solvers
     array<double, 4> hll_solver_euler_2D(array<double, 4> puvE_i_n, array<double, 4> puvE_j_n, int i, int j);
+    array<double, 4> hllc_solver_euler_2D(array<double, 4> puvE_i_n, array<double, 4> puvE_j_n, int i, int j);
 
     // second order euler fv
     array<array<double, 4>, 2> calc_euler_gradients(int i, int boundary_cond);

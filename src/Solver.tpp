@@ -95,7 +95,8 @@ void Solver<CellType>::euler(double dt, int boundary_cond, int sim_order, Point 
             }
 
             // Compute flux
-            array<double, 4> F_ij = hll_solver_euler_2D(puvE_i_ext, puvE_j_ext, i, j);
+            //array<double, 4> F_ij = hll_solver_euler_2D(puvE_i_ext, puvE_j_ext, i, j);
+            array<double, 4> F_ij = hllc_solver_euler_2D(puvE_i_ext, puvE_j_ext, i, j); 
 
             // Get edge length
             double l_i_j = grid->cells[i].edges[j].length;
@@ -173,6 +174,53 @@ array<double, 4> Solver<CellType>::hll_solver_euler_2D(array<double, 4> puvE_i_n
     // get F_HLL by rotating F_HLLn back into lab frame
     array<double, 4> F_HLL = rotate2Deuler(F_HLL_n, theta);
     return F_HLL;
+}
+
+
+// HLLC Solver for Euler equations 2D unstructured
+template <typename CellType>
+array<double, 4> Solver<CellType>::hllc_solver_euler_2D(array<double, 4> puvE_i_n, array<double, 4> puvE_j_n, int i, int j) {
+
+    // rotate puvE_i, puvE_j into n-frame
+    Point n = get_normal_vec(grid->cells[i].edges[j].a, grid->cells[i].edges[j].b);
+    double theta = atan2(n.y, n.x);
+    array<double, 4> puvE_l = rotate2Deuler(puvE_i_n, -theta);
+    array<double, 4> puvE_r = rotate2Deuler(puvE_j_n, -theta);
+
+    // using puvE_l, puvE_r (the rotated ones) now calc F_HLLn using HLL solver
+    // calc f_l and f_r
+    array<double, 4> f_l = get_flux_f_euler(puvE_l);
+    array<double, 4> f_r = get_flux_f_euler(puvE_r);
+
+    // calculate wave speeds
+    double gamma = grid->cells[0].get_gamma();
+    double SL = min(puvE_l[1] - sqrt((gamma * get_P_ideal_gas(puvE_l))/(puvE_l[0])), puvE_r[1] - sqrt((gamma * get_P_ideal_gas(puvE_r))/(puvE_r[0])));
+    double SR = max(puvE_l[1] + sqrt((gamma * get_P_ideal_gas(puvE_l))/(puvE_l[0])), puvE_r[1] + sqrt((gamma * get_P_ideal_gas(puvE_r))/(puvE_r[0])));
+
+    // calculate S_star
+    double S_star = (get_P_ideal_gas(puvE_r) - get_P_ideal_gas(puvE_l) + puvE_l[0]*puvE_l[1]*(SL - puvE_l[1]) - puvE_r[0]*puvE_r[1]*(SR - puvE_r[1]))/(puvE_l[0]*(SL - puvE_l[1]) - puvE_r[0]*(SR - puvE_r[1]));
+
+    // HLLC solver for F
+    array<double, 4> F_HLLC_n;
+    if (0 <= SL) {
+        F_HLLC_n = f_l;
+    } else if (SL <= 0 && 0 <= S_star) {
+        F_HLLC_n[0] = (S_star * (SL * puvE_l[0] - f_l[0]))/(SL - S_star);
+        F_HLLC_n[1] = (S_star * (SL * puvE_l[0] * puvE_l[1] - f_l[1]) + SL*(get_P_ideal_gas(puvE_l) + puvE_l[0]*(SL - puvE_l[1])*(S_star - puvE_l[1])))/(SL - S_star);
+        F_HLLC_n[2] = (S_star * (SL * puvE_l[0]*puvE_l[2] - f_l[2]))/(SL - S_star);
+        F_HLLC_n[3] = (S_star * (SL * puvE_l[3] - f_l[3]) + SL*(get_P_ideal_gas(puvE_l) + puvE_l[0]*(SL - puvE_l[1])*(S_star - puvE_l[1]))*S_star)/(SL - S_star);
+    } else if (S_star <= 0 && 0 <= SR) {
+        F_HLLC_n[0] = (S_star * (SR * puvE_r[0] - f_r[0]))/(SR - S_star);
+        F_HLLC_n[1] = (S_star * (SR * puvE_r[0] * puvE_r[1] - f_r[1]) + SR*(get_P_ideal_gas(puvE_r) + puvE_r[0]*(SR - puvE_r[1])*(S_star - puvE_r[1])))/(SR - S_star);
+        F_HLLC_n[2] = (S_star * (SR * puvE_r[0]*puvE_r[2] - f_r[2]))/(SR - S_star);
+        F_HLLC_n[3] = (S_star * (SR * puvE_r[3] - f_r[3]) + SR*(get_P_ideal_gas(puvE_r) + puvE_r[0]*(SR - puvE_r[1])*(S_star - puvE_r[1]))*S_star)/(SR - S_star);
+    } else if (0 >= SR) {
+        F_HLLC_n = f_r;
+    }
+
+    // get F_HLLC by rotating F_HLLCn back into lab frame
+    array<double, 4> F_HLLC = rotate2Deuler(F_HLLC_n, theta);
+    return F_HLLC;
 }
 
 
