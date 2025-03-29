@@ -68,6 +68,7 @@ After that run the install script
 
 ```bash
 cd openmpFV
+chmod +x install.sh
 ./install.sh
 ```
 
