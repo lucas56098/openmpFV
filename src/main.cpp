@@ -20,6 +20,12 @@
 using namespace std;
 using namespace Eigen;
 
+// ANSI escape codes for text colors
+#define RED_TEXT "\033[1;31m"
+#define ORANGE_TEXT "\033[1;33m"
+#define RESET_COLOR "\033[0m"
+#define GREEN_TEXT "\033[1;32m"
+
 // MAIN :  -------------------------------------------------------------------------------------------------------
 int main () {
 
@@ -40,6 +46,14 @@ int main () {
     // boundary
     int boundary_cond = getenv("HYDRO_BOUNDARY_COND") ? atoi(getenv("HYDRO_BOUNDARY_COND")) : -1; // -1 : reflecting, 1 : zero gradient
     bool is_repeating = getenv("HYDRO_IS_REPEATING") ? atoi(getenv("HYDRO_IS_REPEATING")) : false;
+
+    // make sure that no one tries custom box sizes with periodic boundary conditions
+    if (is_repeating && (abs(box_L_x - 1.0) > 1E-10 || abs(box_L_x - 1.0) > 1E-10)) {
+        box_L_x = 1.0;
+        box_L_y = 1.0;
+        
+        cout << ORANGE_TEXT << "WARNING: " << RESET_COLOR << "Custom box size is not compatible with periodic boundary conditions! Forced" << ORANGE_TEXT << " HYDRO_BOX_L_X = 1" << RESET_COLOR << " and " << ORANGE_TEXT << "HYDRO_BOX_L_Y = 1" << RESET_COLOR << endl;
+    }
 
     // sim specifics
     double total_sim_time = getenv("HYDRO_TOTAL_SIM_TIME") ? atof(getenv("HYDRO_TOTAL_SIM_TIME")) : 1.0;
@@ -117,7 +131,7 @@ int main () {
     // total runtime
     auto final = chrono::high_resolution_clock::now();
     chrono::duration<double> total_time = final - start;
-    cout << "Total time: " << total_time.count() << endl;
+    cout << "---------------------------------------------------\nTotal time: " << total_time.count() << endl;
 
     // maximum memory
     long long maxrss = get_maxrss_memory();
