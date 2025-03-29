@@ -75,6 +75,7 @@ int Mesh<CellType>::get_sort_index(Point pt, int sort_grid_size, int sort_scheme
 
 // Function out of vmp main.cpp
 // RANDOM POINTS: generates seed points to use for mesh generation
+/*
 template <typename CellType>
 vector<Point> Mesh<CellType>::generate_seed_points(int N, bool fixed_random_seed, double min, int max, int rd_seed, bool sort_pts, int sort_precision, int sort_scheme) {
     vector<Point> points;
@@ -154,6 +155,7 @@ vector<Point> Mesh<CellType>::generate_seed_points(int N, bool fixed_random_seed
         points.push_back(Point(x, y));
     }*/
     
+    /*
 
    
     // generate random coordinates for Points
@@ -196,7 +198,71 @@ vector<Point> Mesh<CellType>::generate_seed_points(int N, bool fixed_random_seed
 
     return points;
 }
+*/
 
+
+// RANDOM POINTS: generates seed points to use for mesh generation
+template <typename CellType>
+vector<Point> Mesh<CellType>::generate_seed_points(int N, bool fixed_random_seed, Point min, Point max, int rd_seed, bool sort_pts, int sort_precision, int sort_scheme) {
+    vector<Point> points;
+
+    unsigned int random_seed;
+    default_random_engine eng;
+
+    // set either fixed or changing random seed
+    if (fixed_random_seed) {
+        //cout << "specify random_seed: ";
+        //cin >> random_seed;
+        random_seed = rd_seed;
+    } else {
+        random_device rd;
+        random_seed = rd();
+
+    }
+
+    // define uniform random distribution
+    eng = default_random_engine(random_seed);
+    uniform_real_distribution<double> distrx(min.x, max.x);
+    uniform_real_distribution<double> distry(min.y, max.y);
+
+    // generate random coordinates for Points
+    for (int i = 0; i < N; ++i) {
+        double x = distrx(eng);
+        double y = distry(eng);
+        points.push_back(Point(x, y));
+    }
+
+    // if this is true the points will be sorted
+    if (sort_pts) {
+        vector<int> indices;
+        vector<int> sort_indices;
+
+        // get sort indices
+        for (int i = 0; i < points.size(); i++) {
+            indices.push_back(get_sort_index(points[i], sort_precision, sort_scheme));
+            sort_indices.push_back(i);
+        }
+
+        // combine data into pairs
+        vector<pair<int, int> > combined;
+        for (int i = 0; i < indices.size(); ++i) {
+            combined.push_back(make_pair(indices[i], sort_indices[i]));
+        }    
+
+        // sort combined data by sort indices
+        sort(combined.begin(), combined.end());
+
+        // get sorted_pts
+        vector<Point> sorted_pts;
+        for (int i = 0; i < combined.size(); i++) {
+            sorted_pts.push_back(points[combined[i].second]);
+        }
+
+        return sorted_pts;
+    }
+
+    return points;
+}
 
 // GRID GENERATION: -------------------------------------------------------------------------------
 // calls the generate Mesh functions depending on specified options (cartesian, 1D/2D, N_row, optional lloyd preprocessing, repeating boundary conditions)
@@ -218,19 +284,19 @@ void Mesh<CellType>::generate_grid(bool cartesian, bool is_1D, int N_row, int ll
         // generate voronoi mesh
         if (is_1D) {
             // do it in 1D
-            vector<Point> pts = generate_seed_points(N_row, true, 0, 1, 42, true, 100, 1);
-            this->generate_vmesh1D(pts, repeating);
+            vector<Point> pts = generate_seed_points(N_row, true, Point(0, 0), Point(L_x, L_y), 42, true, 100, 1);
+            this->generate_vmesh1D(pts, repeating); // rescaling does not work here (l_x and l_y = 1 by default here)
             is_cartesian = false;
         } else {
             // do it in 2D
-            vector<Point> pts = generate_seed_points(N_row * N_row, true, 0, 1, 42, true, 100, 1);
-            if (lloyd_iterations != 0) {do_lloyd_iterations(&pts, lloyd_iterations);};
+            vector<Point> pts = generate_seed_points(N_row * N_row, true, Point(0, 0), Point(L_x, L_y), 42, true, 100, 1);
+            if (lloyd_iterations != 0) {do_lloyd_iterations(&pts, lloyd_iterations, L_x, L_y);};
             int nr;
             //int nr2;
             if (structure) {nr = add_struct(&pts, 0.02, 0.05, "struct");}
             //if (structure) {nr2 = add_struct(&pts, 0.000001, 0.006, "struct_europe");}
 
-            this->generate_vmesh2D(pts, repeating, !structure);
+            this->generate_vmesh2D(pts, repeating, !structure, L_x, L_y);
             is_cartesian = false;
 
             // counting here is for each structure: 0-nr: innner points, nr-2nr: outer points, 2nr - ... olt pts
@@ -345,7 +411,7 @@ void Mesh<CellType>::generate_uniform_grid2D(Point start, int n_hor, int n_vert,
 
 // generates vmesh using vmp and converts it into data usable for this mesh type
 template <typename CellType>
-void Mesh<CellType>::generate_vmesh2D(vector<Point> pts, bool repeating, bool point_insertion) {
+void Mesh<CellType>::generate_vmesh2D(vector<Point> pts, bool repeating, bool point_insertion, double L_x, double L_y) {
 
     // preprocessing for repeating boundary conditions
     vector<Point> points_plus_ghost;
@@ -372,7 +438,7 @@ void Mesh<CellType>::generate_vmesh2D(vector<Point> pts, bool repeating, bool po
     }
 
     // generate vmesh
-    VoronoiMesh vmesh(pts);
+    VoronoiMesh vmesh(pts, L_x, L_y);
 
     if (point_insertion) {
         vmesh.do_point_insertion();
@@ -481,13 +547,13 @@ void Mesh<CellType>::generate_vmesh2D(vector<Point> pts, bool repeating, bool po
 
 // does the lloyd_iterations to some points
 template <typename CellType>
-void Mesh<CellType>::do_lloyd_iterations(vector<Point>* pts, int lloyd_iterations) {
+void Mesh<CellType>::do_lloyd_iterations(vector<Point>* pts, int lloyd_iterations, double L_x, double L_y) {
     // preprocessing step to change pts for mesh into pts for approx centroidal vmesh
     if (lloyd_iterations != 0) {
         cout << "start lloyd_iterations" << endl;
 
         // calculate original mesh
-        VoronoiMesh initial_vmesh(*pts);
+        VoronoiMesh initial_vmesh(*pts, L_x, L_y);
         initial_vmesh.do_point_insertion();
         
         // do multiple iterations of lloyds algorithm
@@ -501,7 +567,7 @@ void Mesh<CellType>::do_lloyd_iterations(vector<Point>* pts, int lloyd_iteration
             }
 
             // replace original mesh seeds with centroids and calculate mesh again
-            initial_vmesh = VoronoiMesh(centroids);
+            initial_vmesh = VoronoiMesh(centroids, L_x, L_y);
             initial_vmesh.do_point_insertion();
 
         }
@@ -916,6 +982,7 @@ void Mesh<CellType>::save_mesh(string folder_name, bool cartesian, int N_row, in
 
     if (counter == 0) {
         cout << "file storage format: " << filename << endl;
+        cout << "\nsnap nr. : delta_t : t_sim, Time: [ELAPSED < ETA]" << endl << "---------------------------------------------------\n";
     }
 
     ofstream output_file(filename);

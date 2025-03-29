@@ -62,15 +62,15 @@ public:
 private:
 
     // helper functions
-    vector<Point> generate_seed_points(int N, bool fixed_random_seed, double min, int max, int rd_seed, bool sort_pts, int sort_precision, int sort_scheme);
+    vector<Point> generate_seed_points(int N, bool fixed_random_seed, Point min, Point max, int rd_seed, bool sort_pts, int sort_precision, int sort_scheme);
     int get_sort_index(Point pt, int sort_grid_size, int sort_scheme);
     void make_cell_boundary_cell(int i);
     int add_struct(vector<Point>* pts, double dist_a, double safety_dist, string structname);
-    void do_lloyd_iterations(vector<Point>* pts, int lloyd_iterations);
+    void do_lloyd_iterations(vector<Point>* pts, int lloyd_iterations, double L_x, double L_y);
 
     // different grid generations
     void generate_uniform_grid2D(Point start, int n_hor, int n_vert, double distx, double disty, bool repeating = false);
-    void generate_vmesh2D(vector<Point> pts, bool repeating = false, bool point_insertion = true);
+    void generate_vmesh2D(vector<Point> pts, bool repeating = false, bool point_insertion = true, double L_x = 1, double L_y = 1);
     void generate_uniform_grid1D(Point start, int n, double dist, bool repeating = false);
     void generate_vmesh1D(vector<Point> pts, bool repeating = false);
 };
