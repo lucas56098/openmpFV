@@ -10,6 +10,3 @@ cp -r ./eigen-3.4.0/Eigen ./src/
 # cleanup
 rm eigen-3.4.0.tar.gz
 rm -fr eigen-3.4.0
-
-# install all needed python packages
-pip install pandas numpy matplotlib tqdm scipy sodshock aeropy geopandas

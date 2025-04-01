@@ -13,23 +13,17 @@ The original version of this code was part of my bachelor thesis and can be foun
 - openMP parallelization of hydro calculations
 - CFL timestepping and revised main loop
 - general code cleanup + removal of advection, SWE ...
-- improved KH and RT initial conditions following ([Springel 2010](https://arxiv.org/abs/0901.4107)) for direct comparison
+- improved KH and RT initial conditions for direct comparison to ([Springel 2010](https://arxiv.org/abs/0901.4107))
 - improved file naming: ```c_n30_FV2_BC1_0_1s_test_step148.csv```
 - initial conditions into seperate file
 - run & compile options in bash file ```run.sh```
 - option to restart code from snapshot (voronoi only so far)
 - customizable box length for cartesian and voronoi
-- HLLC solver option: N = 50x50, HLL (left) vs HLLC (right) at t = 2
-<p align="center">
-  <img src="/figures/KH_HLL_test.png" alt="1" width="45%">
-  <img src="/figures/KH_HLLC_test.png" alt="1" width="45%">
-</p>
-
-- ```install.sh``` file
+- Added HLLC riemann solver instead of HLL
+- Getting started guide
 
 #### Todo:
-- Test github getting started section
-- Long runs as well as 1:1 comparisons
+- Long runs: KH1024
 
 #### Further ideas
 - Profiling for Ahmdals law calculations (parallel fration calc in optional runs `-t`)
@@ -40,14 +34,23 @@ The original version of this code was part of my bachelor thesis and can be foun
 
 ---
 ### Simulation Examples
-Kelvin Helmholtz (N = 800x800) following ([Springel 2010](https://arxiv.org/abs/0901.4107)) at t = 2.0
+KH: cartesian FV 2nd-order, HLLC
 <p align="center">
-  <img src="/figures/density.png" alt="1" width="45%">
-  <img src="/figures/abs_v.png" alt="1" width="45%">
-  <img src="/figures/Energy.png" alt="1" width="45%">
-  <img src="/figures/gradient.png" alt="1" width="45%">
-
+  <img src="/figures/KH_HLLC_50.png" alt="1" width="39%">
+  <img src="/figures/KH_HLLC_420.png" alt="1" width="39%">
 </p>
+
+
+RT: N = 48x144, cartesian FV 2nd-order, HLLC
+<p align="center">
+  <img src="/figures/rt_ompFV48.png" alt="1" width="80%">
+</p>
+
+2D-Riemann Problem as in ([Kurganov and Tadmor, 2002](https://www.semanticscholar.org/paper/Solution-of-two%E2%80%90dimensional-Riemann-problems-for-Kurganov-Tadmor/a44da75f9a36ab879fb9073f2571801eb7bc74a3))
+<p align="center">
+  <img src="/figures/quadshock2_1024_lres.gif" alt="1" width="100%">
+</p>
+
 
 ---
 ### Getting started
@@ -56,6 +59,10 @@ Before starting make sure you have the following installed:
 - C++ with a working compiler that supports OpenMP
 - CMake
 - Git (alternatively one can manually download the files)
+- Python packages for ```vis_tk.py```:
+```bash
+pip install pandas numpy matplotlib tqdm scipy sodshock aeropy geopandas 
+```
 
 
 Start by going into the folder where you want to clone the repository into and do:
