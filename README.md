@@ -48,7 +48,7 @@ RT: N = 48x144, cartesian FV 2nd-order, HLLC
 
 2D-Riemann Problem as in ([Kurganov and Tadmor, 2002](https://www.semanticscholar.org/paper/Solution-of-two%E2%80%90dimensional-Riemann-problems-for-Kurganov-Tadmor/a44da75f9a36ab879fb9073f2571801eb7bc74a3))
 <p align="center">
-  <img src="/figures/quadshock2_1024_lres.gif" alt="1" width="100%">
+  <img src="/figures/quadshock2_1024_lres_crop.gif" alt="1" width="60%">
 </p>
 
 
