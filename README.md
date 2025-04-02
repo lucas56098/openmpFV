@@ -37,7 +37,7 @@ The original version of this code was part of my bachelor thesis and can be foun
 KH: cartesian FV 2nd-order, HLLC
 <p align="center">
   <img src="/figures/KH_HLLC_50.png" alt="1" width="39%">
-  <img src="/figures/KH_HLLC_420.png" alt="1" width="39%">
+  <img src="/figures/KH_HLLC_1024.png" alt="1" width="39%">
 </p>
 
 
