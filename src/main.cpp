@@ -16,6 +16,7 @@
 #include "vmp/VoronoiMesh.h"
 #include "utilities/Functions.h"
 #include "utilities/InitialCond.h"
+#include "utilities/Profiler.h"
 #include "Eigen/Dense"
 using namespace std;
 using namespace Eigen;
@@ -28,6 +29,8 @@ using namespace Eigen;
 
 // MAIN :  -------------------------------------------------------------------------------------------------------
 int main () {
+
+    PROFILE_START("TOTAL_RUNTIME");
 
     // SPECIFICATIONS -------------------------------------
     // files
@@ -71,13 +74,16 @@ int main () {
     int ic_value = getenv("HYDRO_IC_VALUE") ? atoi(getenv("HYDRO_IC_VALUE")) : 0;
     string ic_file_name = getenv("HYDRO_IC_FILE") ? getenv("HYDRO_IC_FILE") : "not-specified";
     
+    PROFILE_START("GRID");
     if (ic_value != 6) {
         grid.generate_grid(cartesian, is_1D, N_row, lloyd_steps, is_repeating, structure, box_L_x, box_L_y);
     } else {
         grid.load_mesh_from_file(ic_file_name, is_repeating);
     }
+    PROFILE_END("GRID");
 
     Point g_acc;
+    PROFILE_START("IC");
     if (ic_value == 0) {
         initialize_euler_shock_tube(grid);
     } else if (ic_value == 1) {
@@ -94,7 +100,8 @@ int main () {
     } else if (ic_value == 5) {
         initialize_const_flow(grid, Point(1, 0));
     }
-
+    PROFILE_END("IC");
+    
     // SIMULATION -----------------------------------------
     Solver<Euler_Cell> solver(&grid);
     
@@ -104,11 +111,11 @@ int main () {
     int save_iter = (static_cast<int>(total_sim_time/delT)/total_snapshots/10)*10;
 
     // start timer
+    PROFILE_START("HYDRO");
     auto start = chrono::high_resolution_clock::now();
-
     while (t_sim < total_sim_time) {
         if (counter%save_iter == 0 || t_sim + delT >= total_sim_time) {
-            
+            PROFILE_START("FILESAVE");
             // save the mesh
             grid.save_mesh(folder_name, cartesian, N_row, sim_order, boundary_cond, is_repeating, total_sim_time, txt_addon, counter, t_sim);
 
@@ -117,6 +124,7 @@ int main () {
             chrono::duration<double> elapsed = now - start;
             double eta = (elapsed.count() / (t_sim/total_sim_time)) - elapsed.count();
             cout << counter << " : " << delT << " : " << t_sim << ", Time: [" << format_time(elapsed.count()) << "<" << format_time(eta) << "]" << endl;
+            PROFILE_END("FILESAVE");
         }
         
         // calc new timestepping and do euler step
@@ -127,7 +135,8 @@ int main () {
         t_sim += delT;
         counter += 1;
     }
-
+    PROFILE_END("HYDRO");
+    
     // total runtime
     auto final = chrono::high_resolution_clock::now();
     chrono::duration<double> total_time = final - start;
@@ -136,8 +145,11 @@ int main () {
     // maximum memory
     long long maxrss = get_maxrss_memory();
     
-
     cout << "done" << endl;
+
+    PROFILE_END("TOTAL_RUNTIME");
+    PROFILE_PRINT_RESULTS();
+
     return 0;    
 }
 

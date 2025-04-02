@@ -64,7 +64,7 @@ def process_file(file_name, sort_option = 'none', print_option = False):
 
 ### 2D FV PLOTTING OPTIONS ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # function to do a 2D plot of the mesh with the colormap according to Q
-def plot_2D(s, polygons, Q, cmap = 'viridis', vmin = 0, vmax = 1, edgecolor = 'face', cbar_label = 'Q_value', title = '', xlabel = "", ylabel = "", save = True, save_name = 'image2D', figsize = (12, 10), logscale = False, logmin = 1e-18, xlim = (0, 1), ylim = (0, 1), rasterize = True, plot_seeds = False, seed_size = 10, xticks = [0.2, 0.4, 0.6, 0.8], yticks = [0.2, 0.4, 0.6, 0.8], edgewith = 1, show_cbar = True, seedcolor = "tab:blue", dpi = 1000):
+def plot_2D(s, polygons, Q, cmap = 'viridis', vmin = 0, vmax = 1, edgecolor = 'face', cbar_label = 'Q_value', title = '', xlabel = "", ylabel = "", save = True, save_name = 'image2D', figsize = (12, 10), logscale = False, logmin = 1e-18, xlim = (0, 1), ylim = (0, 1), rasterize = True, plot_seeds = False, seed_size = 10, xticks = [0.2, 0.4, 0.6, 0.8], yticks = [0.2, 0.4, 0.6, 0.8], edgewith = 1, show_cbar = True, seedcolor = "tab:blue", dpi = 1000, textaddon = ""):
 
     # optionally prepare Q for logscale
     if logscale:
@@ -88,6 +88,7 @@ def plot_2D(s, polygons, Q, cmap = 'viridis', vmin = 0, vmax = 1, edgecolor = 'f
     ax.set_yticks(yticks)
     ax.set_xticklabels([''] * len(ax.get_xticks()))
     ax.set_yticklabels([''] * len(ax.get_yticks()))
+    ax.text(0.02, 0.98, textaddon, transform=ax.transAxes, fontsize=18, color='white', verticalalignment='top', horizontalalignment='left')
     
     if plot_seeds:
         ax.scatter(s[:, 0], s[:, 1], color = seedcolor, s=seed_size)
@@ -263,6 +264,168 @@ def plot_2Dx4(polygons0, polygons1, polygons2, polygons3, Q0, Q1, Q2, Q3, cmap =
     # set colorbar
     cbar = fig.colorbar(collection, ax=ax, orientation=cbar_orientation, aspect = cbar_aspect, pad = cbar_padding)
     cbar.set_label(cbar_label)
+    
+    # optional save plot
+    if save:
+        plt.savefig('figures/' + save_name + '.pdf', dpi = dpi, bbox_inches='tight')
+
+    plt.show()
+
+
+# function to do a 2D plot of the mesh with the colormap according to Q
+def plot_2Dx8(polygons0, polygons1, polygons2, polygons3, polygons4, polygons5, polygons6, polygons7, Q0, Q1, Q2, Q3, Q4, Q5, Q6, Q7, cmap = 'viridis', vmin = 0, vmax = 1, edgecolors = ['face', 'face', 'face', 'face', 'face', 'face', 'face', 'face'], cbar_label = 'Q_value', subtitles = ["", "", "", "", "", "", "", ""], xlabel = "", ylabel = "", save = True, save_name = 'image2D', figsize = (12, 5), logscale = False, logmin = 1e-18, xlim = (0, 1), ylim = (0, 1), rasterize = True, cbar_orientation = "horizontal", cbar_aspect = 40, cbar_padding = 0.02, edge_widths = [1, 1, 1, 1, 1, 1, 1, 1], xticks = [0.2, 0.4, 0.6, 0.8], yticks = [0.2, 0.4, 0.6, 0.8], dpi = 1000):
+
+    # optionally prepare Q for logscale
+    if logscale:
+        Q = np.where(np.isinf(Q), -np.inf, np.log10(np.maximum(Q, np.zeros(len(Q)) + logmin)))
+
+    # define plot, norm, poly collection
+    fig, ax = plt.subplots(1, 8, figsize = figsize)
+    plt.subplots_adjust(wspace=0.07)
+    norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+    collection = PolyCollection(polygons0, array=Q0, cmap=cmap, norm=norm, edgecolor=edgecolors[0], linewidth = edge_widths[0]) # edgecolor = 'none' / 'face'
+    print('finished PolyCollection')
+    
+    collection.set_rasterized(rasterize)
+
+    #fig.suptitle("high resolution")
+
+    # add collection to axis and set axis options
+    ax[0].add_collection(collection)
+    ax[0].set_xlim(xlim[0], xlim[1])
+    ax[0].set_ylim(ylim[0], ylim[1])
+    ax[0].set_xlabel(xlabel)
+    ax[0].set_ylabel(ylabel)
+    ax[0].set_xticks(xticks)
+    ax[0].set_yticks(yticks)
+    ax[0].set_xticklabels([''] * len(ax[0].get_xticks()))
+    ax[0].set_yticklabels([''] * len(ax[0].get_yticks()))
+    #ax[0].set_title(subtitles[0])
+    ax[0].text(0.05, 0.98, subtitles[0], transform=ax[0].transAxes, fontsize=10, color='white', verticalalignment='top', horizontalalignment='left')
+
+    collection2 = PolyCollection(polygons1, array=Q1, cmap=cmap, norm=norm, edgecolor=edgecolors[1], linewidth = edge_widths[1]) # edgecolor = 'none' / 'face'
+    print('finished PolyCollection')
+
+    collection2.set_rasterized(rasterize)
+
+    ax[1].add_collection(collection2)
+    ax[1].set_xlim(xlim[0], xlim[1])
+    ax[1].set_ylim(ylim[0], ylim[1])
+    ax[1].set_xlabel(xlabel)
+    ax[1].set_ylabel(ylabel)
+    ax[1].set_xticks(xticks)
+    ax[1].set_yticks(yticks)
+    ax[1].set_xticklabels([''] * len(ax[1].get_xticks()))
+    ax[1].set_yticklabels([''] * len(ax[1].get_yticks()))
+    #ax[1].set_title(subtitles[1])
+    ax[1].text(0.05, 0.98, subtitles[1], transform=ax[1].transAxes, fontsize=10, color='white', verticalalignment='top', horizontalalignment='left')
+
+    collection3 = PolyCollection(polygons2, array=Q2, cmap=cmap, norm=norm, edgecolor=edgecolors[2], linewidth = edge_widths[2]) # edgecolor = 'none' / 'face'
+    print('finished PolyCollection')
+
+    collection3.set_rasterized(rasterize)
+
+    ax[2].add_collection(collection3)
+    ax[2].set_xlim(xlim[0], xlim[1])
+    ax[2].set_ylim(ylim[0], ylim[1])
+    ax[2].set_xlabel(xlabel)
+    ax[2].set_ylabel(ylabel)
+    ax[2].set_xticks(xticks)
+    ax[2].set_yticks(yticks)
+    ax[2].set_xticklabels([''] * len(ax[2].get_xticks()))
+    ax[2].set_yticklabels([''] * len(ax[2].get_yticks()))
+    #ax[2].set_title(subtitles[2])
+    ax[2].text(0.05, 0.98, subtitles[2], transform=ax[2].transAxes, fontsize=10, color='white', verticalalignment='top', horizontalalignment='left')
+
+    collection4 = PolyCollection(polygons3, array=Q3, cmap=cmap, norm=norm, edgecolor=edgecolors[3], linewidth = edge_widths[3]) # edgecolor = 'none' / 'face'
+    print('finished PolyCollection')
+
+    collection4.set_rasterized(rasterize)
+
+    ax[3].add_collection(collection4)
+    ax[3].set_xlim(xlim[0], xlim[1])
+    ax[3].set_ylim(ylim[0], ylim[1])
+    ax[3].set_xlabel(xlabel)
+    ax[3].set_ylabel(ylabel)
+    ax[3].set_xticks(xticks)
+    ax[3].set_yticks(yticks)
+    ax[3].set_xticklabels([''] * len(ax[3].get_xticks()))
+    ax[3].set_yticklabels([''] * len(ax[3].get_yticks()))
+    #ax[3].set_title(subtitles[3])
+    ax[3].text(0.05, 0.98, subtitles[3], transform=ax[3].transAxes, fontsize=10, color='white', verticalalignment='top', horizontalalignment='left')
+
+
+    collection5 = PolyCollection(polygons4, array=Q4, cmap=cmap, norm=norm, edgecolor=edgecolors[4], linewidth = edge_widths[4]) # edgecolor = 'none' / 'face'
+    print('finished PolyCollection')
+
+    collection5.set_rasterized(rasterize)
+
+    ax[4].add_collection(collection5)
+    ax[4].set_xlim(xlim[0], xlim[1])
+    ax[4].set_ylim(ylim[0], ylim[1])
+    ax[4].set_xlabel(xlabel)
+    ax[4].set_ylabel(ylabel)
+    ax[4].set_xticks(xticks)
+    ax[4].set_yticks(yticks)
+    ax[4].set_xticklabels([''] * len(ax[4].get_xticks()))
+    ax[4].set_yticklabels([''] * len(ax[4].get_yticks()))
+    #ax[4].set_title(subtitles[4])
+    ax[4].text(0.05, 0.98, subtitles[4], transform=ax[4].transAxes, fontsize=10, color='white', verticalalignment='top', horizontalalignment='left')
+
+    collection6 = PolyCollection(polygons5, array=Q5, cmap=cmap, norm=norm, edgecolor=edgecolors[5], linewidth = edge_widths[5]) # edgecolor = 'none' / 'face'
+    print('finished PolyCollection')
+
+    collection6.set_rasterized(rasterize)
+
+    ax[5].add_collection(collection6)
+    ax[5].set_xlim(xlim[0], xlim[1])
+    ax[5].set_ylim(ylim[0], ylim[1])
+    ax[5].set_xlabel(xlabel)
+    ax[5].set_ylabel(ylabel)
+    ax[5].set_xticks(xticks)
+    ax[5].set_yticks(yticks)
+    ax[5].set_xticklabels([''] * len(ax[5].get_xticks()))
+    ax[5].set_yticklabels([''] * len(ax[5].get_yticks()))
+    #ax[5].set_title(subtitles[5])
+    ax[5].text(0.05, 0.98, subtitles[5], transform=ax[5].transAxes, fontsize=10, color='white', verticalalignment='top', horizontalalignment='left')
+
+    collection7 = PolyCollection(polygons6, array=Q6, cmap=cmap, norm=norm, edgecolor=edgecolors[6], linewidth = edge_widths[6]) # edgecolor = 'none' / 'face'
+    print('finished PolyCollection')
+
+    collection7.set_rasterized(rasterize)
+
+    ax[6].add_collection(collection7)
+    ax[6].set_xlim(xlim[0], xlim[1])
+    ax[6].set_ylim(ylim[0], ylim[1])
+    ax[6].set_xlabel(xlabel)
+    ax[6].set_ylabel(ylabel)
+    ax[6].set_xticks(xticks)
+    ax[6].set_yticks(yticks)
+    ax[6].set_xticklabels([''] * len(ax[6].get_xticks()))
+    ax[6].set_yticklabels([''] * len(ax[6].get_yticks()))
+    #ax[6].set_title(subtitles[6])
+    ax[6].text(0.05, 0.98, subtitles[6], transform=ax[6].transAxes, fontsize=10, color='white', verticalalignment='top', horizontalalignment='left')
+
+    collection8 = PolyCollection(polygons7, array=Q7, cmap=cmap, norm=norm, edgecolor=edgecolors[7], linewidth = edge_widths[7]) # edgecolor = 'none' / 'face'
+    print('finished PolyCollection')
+
+    collection8.set_rasterized(rasterize)
+
+    ax[7].add_collection(collection8)
+    ax[7].set_xlim(xlim[0], xlim[1])
+    ax[7].set_ylim(ylim[0], ylim[1])
+    ax[7].set_xlabel(xlabel)
+    ax[7].set_ylabel(ylabel)
+    ax[7].set_xticks(xticks)
+    ax[7].set_yticks(yticks)
+    ax[7].set_xticklabels([''] * len(ax[7].get_xticks()))
+    ax[7].set_yticklabels([''] * len(ax[7].get_yticks()))
+    #ax[7].set_title(subtitles[7])
+    ax[7].text(0.05, 0.98, subtitles[7], transform=ax[7].transAxes, fontsize=10, color='white', verticalalignment='top', horizontalalignment='left')
+
+    # set colorbar
+    #cbar = fig.colorbar(collection, ax=ax, orientation=cbar_orientation, aspect = cbar_aspect, pad = cbar_padding)
+    #cbar.set_label(cbar_label)
     
     # optional save plot
     if save:
@@ -461,8 +624,8 @@ def animation2D(file_name, frames, fps=30, animation_name='animation2D', cbar_la
         ax.set_title(title)
 
     # set colorbar
-    cbar = fig.colorbar(collection, ax=ax)
-    cbar.set_label(cbar_label)
+    #cbar = fig.colorbar(collection, ax=ax)
+    #cbar.set_label(cbar_label)
 
     # add empty scatter plot to eventually later on show seeds
     scatter_plot = ax.scatter([], [], color = 'tab:red', s = 10)

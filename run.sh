@@ -15,7 +15,7 @@ export HYDRO_BOX_L_X=1
 export HYDRO_BOX_L_Y=1
 
 # boundary cond
-export HYDRO_BOUNDARY_COND=-1   # -1 : reflective, 1 : zero gradient
+export HYDRO_BOUNDARY_COND=-1   # -1 : reflective, 1 : zero gradient, 2: wind tunnel
 export HYDRO_IS_REPEATING=0     # true or false
 
 # simulation specific
@@ -39,19 +39,33 @@ export HYDRO_IC_FILE="src/files/file_load/v_n30_FV2_BC1_1_5s_test_2_step0.csv"
 
 # ------- Optional: -build to compile hydro before running it -------
 BUILD=false
+PROFILING=false
+
 if [ "$1" == "-b" ]; then
     BUILD=true
+elif [[ "$1" == "-bt" || "$1" == "-tb" ]]; then
+    BUILD=true
+    PROFILING=true
 fi
 
 if $BUILD; then
     # set build folder
     if [ ! -d "build" ]; then
         mkdir build
+    else
+        rm -fr build
+        mkdir build
     fi
 
     # build the program
     cd build || exit 1
-    cmake ../src
+
+    if $PROFILING; then
+        cmake ../src -DENABLE_PROFILING=ON
+    else
+        cmake ../src
+    fi
+
     cmake --build . --config Release --target all --
     cd .. || exit 1
     echo "Build completed!"

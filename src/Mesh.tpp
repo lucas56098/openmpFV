@@ -11,6 +11,7 @@
 #include "cell_types/Euler_Cell.h"
 #include "vmp/VoronoiMesh.h"
 #include "utilities/Functions.h"
+#include "utilities/Profiler.h"
 #include <algorithm>
 #include <cmath>
 #include <omp.h>
@@ -293,7 +294,7 @@ void Mesh<CellType>::generate_grid(bool cartesian, bool is_1D, int N_row, int ll
             if (lloyd_iterations != 0) {do_lloyd_iterations(&pts, lloyd_iterations, L_x, L_y);};
             int nr;
             //int nr2;
-            if (structure) {nr = add_struct(&pts, 0.02, 0.05, "struct");}
+            if (structure) {nr = add_struct(&pts, 0.003, 0.01, "struct");}
             //if (structure) {nr2 = add_struct(&pts, 0.000001, 0.006, "struct_europe");}
 
             this->generate_vmesh2D(pts, repeating, !structure, L_x, L_y);
@@ -764,7 +765,8 @@ int Mesh<CellType>::add_struct(vector<Point>* pts, double dist_a, double safety_
     
     // load structpoints from file
     vector<Point> verticies;
-    ifstream file("../src/files/" + structname + ".csv");
+    ifstream file("src/files/" + structname + ".csv");
+
     string line;
 
     while (getline(file, line)) {
@@ -831,7 +833,7 @@ int Mesh<CellType>::add_struct(vector<Point>* pts, double dist_a, double safety_
     *pts = pts_removed;
 
     // return int = inner_seeds.size(), set *pts =  {inner_seeds, outer_seeds, pts}
-    inner_points.push_back(Point(0.5, 0.5));
+    //inner_points.push_back(Point(0.5, 0.5));
     vector<Point> new_pts;
     for (int i = 0; i<inner_points.size(); i++) {
         new_pts.push_back(inner_points[i]);
@@ -1037,7 +1039,6 @@ void Mesh<CellType>::save_mesh(string folder_name, bool cartesian, int N_row, in
     }
 
     output_file.close();
-
 }
 
 // load data from file
@@ -1142,9 +1143,9 @@ double Mesh<CellType>::dt_CFL_euler(double CFL) {
     
     double min_dt = 1;
 
+    PROFILE_START("CFL (par)");
     #pragma omp parallel for
     for (int i = 0; i < cells.size(); i++) {
-
         double c_i = sqrt(cells[i].get_gamma() * (cells[i].get_P()/cells[i].get_rho()));
         double R_i = sqrt(cells[i].volume / M_PI); // 2D -> hence circle
         double v_abs = sqrt((cells[i].get_u()* cells[i].get_u()) + (cells[i].get_u()* cells[i].get_u()));
@@ -1154,6 +1155,7 @@ double Mesh<CellType>::dt_CFL_euler(double CFL) {
             min_dt = dt_i;
         }
     }
+    PROFILE_END("CFL (par)");
 
     return min_dt;
 }

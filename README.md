@@ -21,15 +21,16 @@ The original version of this code was part of my bachelor thesis and can be foun
 - customizable box length for cartesian and voronoi
 - Added HLLC riemann solver instead of HLL
 - Getting started guide
+- Profiling option (simply compile with ```./run.sh -bt``` to activate)
 
 #### Todo:
-- Long runs: KH1024
+- Improve Installation guide
+- FV moving mesh?
 
 #### Further ideas
-- Profiling for Ahmdals law calculations (parallel fration calc in optional runs `-t`)
+- Ahmdals law calculations (VERA?)
 - Profiling for performance improvements
 - direct speed comparison with AREPO
-- FV moving mesh
 - eventually DG improvements
 
 ---
@@ -79,13 +80,14 @@ chmod +x install.sh
 ./install.sh
 ```
 
-This will install the Eigen header Library into ```src/Eigen``` and make sure all python packages are installed.
+This will install the Eigen header Library into ```src/Eigen```.
 
 You can specify your simulation options in the ```run.sh``` and build the code with
 
 ```bash
 ./run.sh -b
 ```
+If you want to activate the time profiling compile with ```./run.sh -bt``` instead.
 
 To run the simulation simply do
 

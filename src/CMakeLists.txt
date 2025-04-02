@@ -22,6 +22,11 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(ENABLE_PROFILING "Enable time profiling" OFF)
+if(ENABLE_PROFILING)
+    add_definitions(-DENABLE_PROFILING)
+endif()
+
 add_executable(hydro 
     
     # main program
@@ -39,6 +44,7 @@ add_executable(hydro
     # further utilities
     utilities/Functions.cpp
     utilities/InitialCond.cpp
+    utilities/Profiler.cpp
     
     # imported voronoi_mesh_project
     vmp/Halfplane.cpp 

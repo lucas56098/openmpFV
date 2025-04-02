@@ -67,13 +67,18 @@ void Solver<CellType>::euler(double dt, int boundary_cond, int sim_order, Point 
     // gradients in parallel if sim_order == 2
     if (sim_order == 2) {
         gradients.resize(num_cells);
+    
+        PROFILE_START("GRADCALC (par)");
         #pragma omp parallel for
         for (int i = 0; i < num_cells; i++) {
             gradients[i] = calc_euler_gradients(i, boundary_cond);
         }
+        PROFILE_END("GRADCALC (par)");
     }
 
+
     // Compute new cell values in parallel
+    PROFILE_START("FLUXCALC (par)");
     #pragma omp parallel for
     for (int i = 0; i < num_cells; i++) {
 
@@ -112,9 +117,6 @@ void Solver<CellType>::euler(double dt, int boundary_cond, int sim_order, Point 
         array<double, 4> puvE_i_np1;
         double A = grid->cells[i].volume;
         puvE_i_np1[0] = puvE_i_n[0] - (dt / A) * total_flux[0];
-        //if (puvE_i_np1[0] < 0.0001) {
-        //    puvE_i_np1[0] = 0.0001;
-        //}
         puvE_i_np1[1] = (puvE_i_n[0] * puvE_i_n[1] - (dt / A) * total_flux[1] + dt * puvE_i_n[0] * g.x) / puvE_i_np1[0];
         puvE_i_np1[2] = (puvE_i_n[0] * puvE_i_n[2] - (dt / A) * total_flux[2] + dt * puvE_i_n[0] * g.y) / puvE_i_np1[0];
         puvE_i_np1[3] = puvE_i_n[3] - (dt / A) * total_flux[3] + dt * (puvE_i_n[1] * g.x + puvE_i_n[2] * g.y);
@@ -123,9 +125,11 @@ void Solver<CellType>::euler(double dt, int boundary_cond, int sim_order, Point 
         Q_new[i] = puvE_i_np1;
 
     }
+    PROFILE_END("FLUXCALC (par)");
 
 
     // Apply updates to grid in parallel
+    PROFILE_START("VAL_REPLACEMENT (par)");
     #pragma omp parallel for
     for (int i = 0; i < num_cells; i++) {
         grid->cells[i].rho = Q_new[i][0];
@@ -133,6 +137,8 @@ void Solver<CellType>::euler(double dt, int boundary_cond, int sim_order, Point 
         grid->cells[i].v = Q_new[i][2];
         grid->cells[i].E = Q_new[i][3];
     }
+    PROFILE_END("VAL_REPLACEMENT (par)");
+    
 }
 
 
@@ -282,6 +288,13 @@ array<array<double, 4>, 2> Solver<CellType>::calc_euler_gradients(int i, int bou
     //    limited_gradientU = slope_limit_tvd(gradientU, i, U_i, boundary_cond, 0);
     //} else {
     //    limited_gradientU = slope_limit_maxmin(gradientU, i, U_i, boundary_cond);  
+    //}
+
+    // another safety measure
+    //for (int j = 0; j < grid->cells[i].edges.size(); j++) {
+    //    if (grid->cells[i].edges[j].is_boundary) {
+    //        limited_gradientU = slope_limit_tvd(gradientU, i, U_i, boundary_cond, 0);
+    //    }
     //}
 
     // return gradient which now can be used to extrapolate the values
@@ -489,13 +502,21 @@ template <typename CellType>
 array<double, 4> Solver<CellType>::get_puvE_j(array<double, 4> puvE_i, int i, int j, int boundary_cond) {
 
     // values of other cell (initalized with sink boundaries for boundary cond = 1)
-    array<double, 4> puvE_j = {puvE_i[0], boundary_cond * puvE_i[1], boundary_cond * puvE_i[2], puvE_i[3]};
+    array<double, 4> puvE_j = {puvE_i[0], puvE_i[1], puvE_i[2], puvE_i[3]};
     // if reflective boundary change velocities accordingly
     if (boundary_cond == -1 || (grid->cells[i].seed.x > 0.1 && grid->cells[i].seed.x < 0.9 && grid->cells[i].seed.y > 0.1 && grid->cells[i].seed.y < 0.9)) {
         Point n = get_normal_vec(grid->cells[i].edges[j].a, grid->cells[i].edges[j].b);
 
         puvE_j[1] = puvE_i[1] - 2*(puvE_i[1]*n.x + puvE_i[2]*n.y)*n.x;
         puvE_j[2] = puvE_i[2] - 2*(puvE_i[1]*n.x + puvE_i[2]*n.y)*n.y;
+    }
+
+    // activate this if you want a constant flow like in a wind tunnel
+    if (boundary_cond == 2 && grid->cells[i].seed.x < 0.01) {
+        puvE_j[0] = 1;
+        puvE_j[1] = 1;
+        puvE_j[2] = 0;
+        puvE_j[3] = 1;
     }
 
     // get actual puvE values if its not a boundary
