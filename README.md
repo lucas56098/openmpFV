@@ -7,7 +7,7 @@ The original version of this code was part of my bachelor thesis and can be foun
 
 ---
 > [!Warning]  
-> Construction Zone: Expect large changes in single commits. Thins may break, change or evolve rapidly. No documentation so far...
+> Construction Zone: Expect large changes in single commits. Things may break, change or evolve rapidly. No documentation so far...
 
 #### Improvements:
 - openMP parallelization of hydro calculations
