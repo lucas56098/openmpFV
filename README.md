@@ -26,12 +26,17 @@ The original version of this code was part of my bachelor thesis and can be foun
 #### Todo:
 - Improve Installation guide
 - FV moving mesh?
+- high res RT
 
 #### Further ideas
+- Multithreaded mesh generation?
 - Ahmdals law calculations (VERA?)
 - Profiling for performance improvements
 - direct speed comparison with AREPO
+- proper termination (when unphysical behaviour)
+- ifdef usage to specify FV/DG/moving
 - eventually DG improvements
+- MPI?
 
 ---
 ### Simulation Examples
@@ -50,6 +55,19 @@ RT: N = 48x144, cartesian FV 2nd-order, HLLC
 2D-Riemann Problem as in ([Kurganov and Tadmor, 2002](https://www.semanticscholar.org/paper/Solution-of-two%E2%80%90dimensional-Riemann-problems-for-Kurganov-Tadmor/a44da75f9a36ab879fb9073f2571801eb7bc74a3))
 <p align="center">
   <img src="/figures/quadshock2_1024_lres_crop.gif" alt="1" width="60%">
+</p>
+
+---
+### Performance and Scalability
+Strong scaling for a N=300x300, t = 0.01s, 3 snapshot, KH testcase. f_parallel = 99.3% allows for a theoretical max speedup of 143.
+<p align="center">
+  <img src="/figures/ahmdal.png" alt="1" width="45%">
+  <img src="/figures/runtime.png" alt="1" width="45%">
+</p>
+
+Gradient and flux calculation are by far the most time consuming. For high thread numbers the single-thread snapshot saving becomes relevant.
+<p align="center">
+  <img src="/figures/pie.png" alt="1" width="75%">
 </p>
 
 
